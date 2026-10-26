@@ -67,7 +67,9 @@ def main(argv: list[str] | None = None) -> int:
         result = run_scenario(name, seed=args.seed, burst_seconds=args.burst_seconds)
         record = result.to_dict()
         if wait:
-            incidents = wait_for_analysis(result.run_id, timeout=args.timeout)
+            incidents = wait_for_analysis(
+                result.run_id, expected_alerts=len(result.alert_ids), timeout=args.timeout
+            )
             record["incidents"] = [{k: str(v) for k, v in i.items()} for i in incidents]
         results.append(record)
         if not args.json:

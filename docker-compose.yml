@@ -153,6 +153,7 @@ services:
       ALERT_SERVICE_URL: http://alert-service:8080
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-change-me-local-only}
       LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      MODEL_PROFILE: ${MODEL_PROFILE:-routed}
       OLLAMA_BASE_URL: http://host.docker.internal:11434
       TRIAGE_MODEL: ${TRIAGE_MODEL:-}
       INVESTIGATOR_MODEL: ${INVESTIGATOR_MODEL:-}
@@ -162,6 +163,7 @@ services:
       EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-local}
       EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
       TRIAGE_WINDOW_SECONDS: ${TRIAGE_WINDOW_SECONDS:-20}
+      TRIAGE_QUIET_SECONDS: ${TRIAGE_QUIET_SECONDS:-6}
       SIMILARITY_THRESHOLD: ${SIMILARITY_THRESHOLD:-0.55}
       REMEDIATION_DRY_RUN: ${REMEDIATION_DRY_RUN:-true}
       LOGS_MCP_URL: http://mcp-servers:8101/mcp
@@ -179,6 +181,12 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "${AGENT_SERVICE_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
     volumes:
       - models-cache:/root/.cache
     depends_on:

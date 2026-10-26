@@ -109,14 +109,25 @@ def incidents_for_run(run_id: str, settings: BaseServiceSettings | None = None) 
 
 
 def wait_for_analysis(
-    run_id: str, *, timeout: float = 900.0, poll: float = 3.0, settings: BaseServiceSettings | None = None
+    run_id: str,
+    *,
+    expected_alerts: int | None = None,
+    timeout: float = 900.0,
+    poll: float = 3.0,
+    settings: BaseServiceSettings | None = None,
 ) -> list[dict[str, Any]]:
-    """Block until every incident holding this run's alerts has finished agent analysis (or timeout)."""
+    """Block until all of this run's alerts belong to incidents and every one has finished analysis.
+
+    Without ``expected_alerts`` a fast, small incident (e.g. the background alert) could finish before the
+    main storm's group has even closed, and we'd return too early.
+    """
     deadline = time.monotonic() + timeout
     incidents: list[dict[str, Any]] = []
     while time.monotonic() < deadline:
         incidents = incidents_for_run(run_id, settings)
-        if incidents and all(i["status"] in ANALYSIS_DONE for i in incidents):
+        grouped = sum(int(i["run_alerts"]) for i in incidents)
+        complete = expected_alerts is None or grouped >= expected_alerts
+        if incidents and complete and all(i["status"] in ANALYSIS_DONE for i in incidents):
             return incidents
         time.sleep(poll)
     return incidents
