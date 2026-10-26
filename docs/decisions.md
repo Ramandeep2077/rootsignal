@@ -34,3 +34,15 @@ Newest phase last.
 | D20 | **Fingerprints** normalise ids, hex and numbers before hashing. | Cheap exact-duplicate detection before any AI is involved; triage uses it as a first-pass grouping signal. |
 | D21 | Errors are **RFC 9457 `ProblemDetail`** responses, with field-level `errors` for validation. | One predictable error shape for every client. |
 | D22 | Integration tests (`*IT`) run in `mvn verify` via Failsafe, against Testcontainers Postgres and Redpanda. | Fast `mvn test` loop locally; full-stack confidence in CI. |
+
+## Phase 2 — Simulator
+
+| # | Decision | Why |
+|---|----------|-----|
+| D23 | The "fake microservices" are a **discrete-time simulation** (30 s ticks, 30 min window), not five running HTTP servers. | Deterministic (seeded), fast (a whole scenario simulates in milliseconds), easy to test, and light enough for a 16 GB laptop. The agents only see telemetry and alerts, which look the same either way. |
+| D24 | **Alerts emerge from rules over simulated metrics** (Prometheus-style `for:` + repeat interval, several sources), and failures **propagate through the dependency graph**. | Duplicates and cross-service symptom alerts come from the simulation instead of being hand-written, so noise reduction is measured on realistic storms. |
+| D25 | **Red herrings and near-miss pairs**: unrelated routine changes, one background alert per run, and confusable pairs (deploy vs config change, outage vs 429, slow dependency vs pool exhaustion). | Without these, root-cause accuracy would be inflated by trivially separable scenarios. |
+| D26 | **Ground truth never reaches the agents.** Alerts carry only an opaque `sim_run` id; tests assert scenario names never appear in alerts. | The eval would be meaningless if the answer leaked. |
+| D27 | **Telemetry is replaced per run**, and tools query by time range like real backends. | Sequential runs have overlapping 30-minute windows; isolation by truncation keeps runs independent without leaking a run id into tool queries. |
+| D28 | Alert timestamps are the simulated (backdated) time; the storm is replayed over ~12 s of wall-clock time. | Realistic alert timestamps for the agents, while keeping eval runs fast. |
+| D29 | The eval harness reads the alert service's tables directly (read-only) to map `sim_run` → incident. | The public API intentionally doesn't expose label search; the harness is test infrastructure, not a client. |
