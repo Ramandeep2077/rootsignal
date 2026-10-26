@@ -1,0 +1,52 @@
+# --- Secrets & local config ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# --- Java ---
+target/
+*.class
+.mvn/wrapper/maven-wrapper.jar
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+dashboard/coverage/
+
+# --- Terraform ---
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+.terraform.lock.hcl.bak
+
+# --- Local runtime artefacts ---
+.cache/
+evals/runs/
+*.log
