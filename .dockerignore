@@ -1,0 +1,13 @@
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/node_modules
+**/.next
+**/target
+.git
+.env
+evals/runs
+dashboard
+alert-service
+infra
