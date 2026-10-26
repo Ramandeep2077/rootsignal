@@ -56,9 +56,19 @@ CREATE TABLE IF NOT EXISTS telemetry.deployments (
 );
 CREATE INDEX IF NOT EXISTS idx_deployments_ts ON telemetry.deployments (ts DESC);
 
+CREATE TABLE IF NOT EXISTS knowledge.runbooks (
+    runbook_id   TEXT PRIMARY KEY,
+    title        TEXT  NOT NULL,
+    categories   JSONB NOT NULL,
+    services     JSONB NOT NULL,
+    actions      JSONB NOT NULL,
+    body         TEXT  NOT NULL,
+    content_hash TEXT  NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS knowledge.runbook_chunks (
     id          BIGSERIAL PRIMARY KEY,
-    runbook_id  TEXT    NOT NULL,
+    runbook_id  TEXT    NOT NULL REFERENCES knowledge.runbooks (runbook_id) ON DELETE CASCADE,
     title       TEXT    NOT NULL,
     section     TEXT    NOT NULL,
     content     TEXT    NOT NULL,
