@@ -46,3 +46,16 @@ Newest phase last.
 | D27 | **Telemetry is replaced per run**, and tools query by time range like real backends. | Sequential runs have overlapping 30-minute windows; isolation by truncation keeps runs independent without leaking a run id into tool queries. |
 | D28 | Alert timestamps are the simulated (backdated) time; the storm is replayed over ~12 s of wall-clock time. | Realistic alert timestamps for the agents, while keeping eval runs fast. |
 | D29 | The eval harness reads the alert service's tables directly (read-only) to map `sim_run` → incident. | The public API intentionally doesn't expose label search; the harness is test infrastructure, not a client. |
+
+## Phase 3 — MCP servers
+
+| # | Decision | Why |
+|---|----------|-----|
+| D30 | **MCP Python SDK v2** (`MCPServer`, `mcp.Client`), pinned to `>=2.3,<3`. | Current major version; v2 renamed `FastMCP` and changed the client API, so the pin prevents accidental drift. |
+| D31 | **Four separate servers in one process** (ports 8101–8104), streamable HTTP in stateless JSON mode. | Mirrors how teams split tool ownership (logs vs metrics vs change tracking vs knowledge) while costing one container. Stateless mode means no session affinity and easy horizontal scaling. |
+| D32 | **Aggregating tools** (`log_error_summary`, `detect_metric_anomalies`) alongside raw ones. | Small local models do much better with one compact, pre-aggregated answer than with pages of raw logs; fewer tool calls also means lower latency on CPU inference. |
+| D33 | Tool logic is plain functions over a DB connection; the MCP layer is thin. | Logic is testable without MCP plumbing, and the MCP layer is still tested end to end with an in-process client. |
+| D34 | Tools raise `ToolError` for bad input; unexpected exceptions are masked by the SDK. | The model gets actionable messages ("Known services: …"), but internals never leak. |
+| D35 | **fastembed (ONNX) for `all-MiniLM-L6-v2`** rather than `sentence-transformers` + PyTorch. | Same sentence-transformers model and vectors, about 2 GB smaller images, faster CPU startup. |
+| D36 | Runbooks are **markdown with front matter**, chunked per section, re-indexed only when the corpus hash changes. | Humans can edit runbooks in git; section-level chunks give precise retrieval; startup stays fast. |
+| D37 | DB tests use a dedicated `oncall_test` database created on demand; CI runs a pgvector service. | Tests never clobber dev data, and integration tests run in CI rather than being skipped. |

@@ -35,6 +35,16 @@ jobs:
     env:
       LLM_PROVIDER: mock
       EMBEDDINGS_PROVIDER: hash
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.7-pg17-trixie
+        env:
+          POSTGRES_USER: oncall
+          POSTGRES_PASSWORD: oncall-local-dev
+          POSTGRES_DB: oncall
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U oncall" --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10
