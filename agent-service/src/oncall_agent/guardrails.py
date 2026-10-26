@@ -34,8 +34,9 @@ DESTRUCTIVE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
         ),
         (
             "terminate fleet",
-            r"\bterminate[-_\s]+(all|instances)\b|\bscale\b[^.]*\bto\s+0\b|\breplicas[=:\s]+0\b",
+            r"\bterminate[-_\s]+(all|instances)\b|\bscale\b[^.]*\bto\s+0\b|\breplicas\s*(=|:|to)?\s*0\b",
         ),
+        ("purge data", r"\bpurge\s+(the\s+|all\s+)?(topic|queue|database|table|bucket|messages|data)\b"),
         (
             "disable safety",
             r"\b(disable|silence|mute|turn\s+off)\s+(all\s+)?(monitoring|alerts|alerting|guardrails"

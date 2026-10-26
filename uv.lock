@@ -831,11 +831,19 @@ name = "oncall-evals"
 version = "0.1.0"
 source = { editable = "evals" }
 dependencies = [
+    { name = "httpx" },
+    { name = "oncall-agent" },
     { name = "oncall-common" },
+    { name = "oncall-simulator" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "oncall-common", editable = "common" }]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "oncall-agent", editable = "agent-service" },
+    { name = "oncall-common", editable = "common" },
+    { name = "oncall-simulator", editable = "simulator" },
+]
 
 [[package]]
 name = "oncall-mcp"

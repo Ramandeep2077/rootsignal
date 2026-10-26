@@ -49,6 +49,8 @@ UNSAFE = {
     "unknown target": proposal(target="billing-db-primary"),
     "mkfs": proposal(steps=["mkfs.ext4 /dev/sdb to reclaim the disk"]),
     "shutdown": proposal(steps=["shutdown now the host"]),
+    "replicas to zero": proposal(action="scale_out", steps=["Set replicas to 0 for all services"]),
+    "purge topic": proposal(steps=["Purge the topic orders to clear the lag"]),
 }
 
 

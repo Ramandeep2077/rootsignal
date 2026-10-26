@@ -101,6 +101,7 @@ class AgentService:
         self.grouper: AlertGrouper | None = None
         self._tasks: list[asyncio.Task] = []
         self._busy = 0
+        self.ready: dict[str, asyncio.Event] = {}
 
     # ---- lifecycle ----
 
@@ -305,12 +306,32 @@ class AgentService:
     async def _consume_decisions(self) -> None:
         await self._consume(self.settings.decisions_topic, "executor", self.executor.handle_decision)
 
+    async def _await_assignment(self, consumer: AIOKafkaConsumer, topic: str) -> None:
+        """Partitions are assigned asynchronously after start(); flag readiness once they are."""
+        for _ in range(300):
+            if consumer.assignment():
+                break
+            await asyncio.sleep(0.1)
+        self.ready.setdefault(topic, asyncio.Event()).set()
+        log.info("consuming %s (partitions %s)", topic, sorted(p.partition for p in consumer.assignment()))
+
+    async def wait_ready(self, timeout: float = 60.0) -> None:
+        """Block until every Kafka consumer has partitions (callers then know no alert will be missed)."""
+        topics = [self.settings.alerts_topic, self.settings.decisions_topic] if self.consume_kafka else []
+        for topic in topics:
+            await asyncio.wait_for(self.ready.setdefault(topic, asyncio.Event()).wait(), timeout)
+
+    def reset_grouping(self) -> None:
+        """Forget closed groups so the next alert storm can't attach to a previous incident (eval isolation)."""
+        if self.grouper:
+            self.grouper.closed.clear()
+
     async def _consume(self, topic: str, suffix: str, handler) -> None:
         while True:
             consumer = self._consumer(topic, suffix)
             try:
                 await consumer.start()
-                log.info("consuming %s", topic)
+                await self._await_assignment(consumer, topic)
                 async for message in consumer:
                     # Continue the producer's trace: Spring Kafka puts traceparent in the record headers.
                     token = otel_context.attach(extract_context(message.headers))
