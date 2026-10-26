@@ -150,7 +150,8 @@ class IncidentLifecycleIT extends IntegrationTestSupport {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.totalIncidents").value(greaterThanOrEqualTo(1)))
 				.andExpect(jsonPath("$.groupedAlerts").value(greaterThanOrEqualTo(2)))
-				.andExpect(jsonPath("$.noiseReductionPercent").isNumber());
+				.andExpect(jsonPath("$.noiseReductionPercent").isNumber())
+				.andExpect(jsonPath("$.avgSecondsToNotification").hasJsonPath());
 	}
 
 }

@@ -18,7 +18,8 @@ public class MetricsController {
 
 	public record MetricsSummary(long totalAlerts, long groupedAlerts, long totalIncidents,
 			Double noiseReductionPercent, Double avgSecondsToSummary, Double p50SecondsToSummary,
-			Double p95SecondsToSummary, Double avgCostUsd, Double avgTotalTokens, Map<String, Long> incidentsByStatus) {
+			Double p95SecondsToSummary, Double avgSecondsToNotification, Double avgCostUsd, Double avgTotalTokens,
+			Map<String, Long> incidentsByStatus) {
 	}
 
 	private final JdbcClient jdbc;
@@ -43,6 +44,8 @@ public class MetricsController {
 				  (select avg(seconds) from tts) as avg_tts,
 				  (select percentile_cont(0.5) within group (order by seconds) from tts) as p50_tts,
 				  (select percentile_cont(0.95) within group (order by seconds) from tts) as p95_tts,
+				  (select avg(extract(epoch from notified_at - first_alert_at)) from incidents
+				     where notified_at is not null) as avg_ttn,
 				  (select avg((llm_usage ->> 'estimated_cost_usd')::numeric) from incidents
 				     where llm_usage ->> 'estimated_cost_usd' is not null) as avg_cost,
 				  (select avg((llm_usage ->> 'total_tokens')::numeric) from incidents
@@ -60,6 +63,7 @@ public class MetricsController {
 		Double reduction = grouped == 0 ? null : 100.0 * (1.0 - (double) incidents / grouped);
 		return new MetricsSummary(toLong(row.get("total_alerts")), grouped, incidents, reduction,
 				toDouble(row.get("avg_tts")), toDouble(row.get("p50_tts")), toDouble(row.get("p95_tts")),
+				toDouble(row.get("avg_ttn")),
 				toDouble(row.get("avg_cost")), toDouble(row.get("avg_tokens")), byStatus);
 	}
 
