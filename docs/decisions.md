@@ -88,3 +88,15 @@ Newest phase last.
 | D54 | **Slack Block Kit via incoming webhook, then SMTP email as fallback** (`FallbackNotifier`: first channel to succeed wins). | Slack is where on-call lives; email covers a Slack outage. Delivery failure never fails the incident pipeline; it's logged and the incident is simply not marked notified. |
 | D55 | **Bundled mock Slack webhook** (`mock-slack`, `GET :8090/messages`) and **Mailpit** (`:8025`) in Compose. | Notifications work offline at $0; set `SLACK_WEBHOOK_URL` to a real webhook to use real Slack. |
 | D56 | The message carries title, severity, services, alert count, root-cause hypothesis and confidence, proposed action with risk, a link to the dashboard (approve/reject happens there, not in Slack) and token/cost usage. | Approving from a chat button would bypass the authenticated review UI; the link keeps the human decision in one audited place. |
+
+## Phase 6 — Dashboard
+
+| # | Decision | Why |
+|---|----------|-----|
+| D57 | **Next.js 16 (App Router, Cache Components) as a static shell + client-side polling** of the alert service every 3–5 s. | Incident state changes every few seconds and approve/reject are client mutations, so there's nothing useful to prerender with data. The shell prerenders (static/PPR), data streams in live, and the build doesn't need the backend. |
+| D58 | Under Cache Components, URL-reading pieces (`usePathname` for the active nav link; `params` on the detail page) are wrapped in `<Suspense>`. | Required by Next 16: URL data is runtime data. Only the nav highlight and the detail body are dynamic; the rest of the layout stays static. |
+| D59 | **Design tokens from the dataviz reference palette**, with light *and* dark selected (not auto-inverted), a system/light/dark toggle applied by an inline pre-paint script. | No theme flash on load, consistent ink/surface roles, and chart colours validated for both modes. |
+| D60 | **Status and severity are always colour + text label**; status colours are reserved for state. | Accessibility: never colour alone. |
+| D61 | Metrics: one hero figure (noise reduction), stat tiles, and two single-series bar charts with direct value labels, hover tooltips and a table view. No legends (single series), no dual axes. | Follows the dataviz method: the headline number is a tile, not a chart; every chart has a table alternative. |
+| D62 | **Approve/Reject require a name**; buttons only render in `PENDING_APPROVAL`, and the panel states that approval triggers a dry run only. | Attributable decisions; the UI mirrors the backend state machine instead of trusting the client. |
+| D63 | Vitest + Testing Library for units (formatting, duplicate collapsing, badge labels, approval flow); Playwright for screenshots. | Fast unit tests in CI; real-browser rendering for visual checks and README images. |
