@@ -19,3 +19,18 @@ Newest phase last.
 | D10 | **Testcontainers uses the same images as Compose** (pgvector Postgres 17, Redpanda). | Tests exercise real infrastructure with no "works in test, fails in prod" gap. |
 | D11 | **GNU make** (installed via winget on Windows) with recipes that work in both `sh` and `cmd`. | One entry point (`make up`, `make test`, `make eval`) on every OS and in CI. |
 | D12 | Every image and GitHub Action is **pinned to an exact version**. | Reproducible builds; upgrades are deliberate. |
+
+## Phase 1 — Alert ingestion service
+
+| # | Decision | Why |
+|---|----------|-----|
+| D13 | **Feature packages** (`alert`, `incident`, `metrics`) each layered controller → service → repository. | Keeps related code together; layering inside each feature keeps HTTP, business rules and persistence separate. |
+| D14 | **Kafka publish after commit** (`@TransactionalEventListener(AFTER_COMMIT)`). | Consumers never see an alert that a rolled-back transaction discarded. Trade-off: if Kafka is down right after commit the event is lost; a transactional outbox is the production fix (noted as future work). |
+| D15 | Events are **plain JSON strings** keyed by service. | Language-neutral for the Python consumer; per-service ordering within a partition. |
+| D16 | **Incident state machine in the domain** (`IncidentStatus.allowedNext`). The only path into `APPROVED` is from `PENDING_APPROVAL` via a human call, and this is unit-tested for every status. | The core safety guarantee lives in one tested place, not scattered across controllers. |
+| D17 | Agent output (root cause, evidence, proposed action, reasoning trace, usage) is stored as **JSONB**. | Agent schemas evolve faster than the relational core; the alert service displays them but doesn't interpret them, apart from requiring a proposed action for `PENDING_APPROVAL`. |
+| D18 | **Separate internal API** (`/api/internal/**`), guarded by a shared token with constant-time comparison. | Agents can write analysis, but browser clients can't forge it. A shared token is enough for a local demo; mTLS or OAuth2 client credentials would be the production choice. Public approve/reject has no auth in the local demo; noted as future work. |
+| D19 | **Time to summary is measured from when the alert service first received an alert** (`received_at`), not the sender's timestamp. | Immune to clock skew between monitoring tools. |
+| D20 | **Fingerprints** normalise ids, hex and numbers before hashing. | Cheap exact-duplicate detection before any AI is involved; triage uses it as a first-pass grouping signal. |
+| D21 | Errors are **RFC 9457 `ProblemDetail`** responses, with field-level `errors` for validation. | One predictable error shape for every client. |
+| D22 | Integration tests (`*IT`) run in `mvn verify` via Failsafe, against Testcontainers Postgres and Redpanda. | Fast `mvn test` loop locally; full-stack confidence in CI. |
