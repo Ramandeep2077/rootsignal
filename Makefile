@@ -17,7 +17,7 @@ RCA_MODEL ?= qwen2.5:7b
 
 .DEFAULT_GOAL := help
 .PHONY: help env infra up up-obs down clean logs ps models test test-java test-python test-dashboard \
-        lint sim sim-all eval eval-report tf-plan
+        lint sim sim-all eval eval-report tf-validate aws-local tf-plan tf-apply-local tf-destroy-local \n        aws-deploy aws-destroy
 
 help: ## Show available targets
 	@echo "infra       start postgres + redpanda only"
@@ -28,7 +28,9 @@ help: ## Show available targets
 	@echo "models      pull the local Ollama models"
 	@echo "test        run every test suite              | lint   run all linters"
 	@echo "sim         run one scenario (SCENARIO=...)   | sim-all  run every scenario"
-	@echo "eval        run the evaluation suite (RUNS=$(RUNS))"
+	@echo "eval        run the evaluation suite (PROFILES=$(PROFILES))"
+	@echo "tf-plan     terraform plan (full AWS stack) against LocalStack   | tf-apply-local  apply free-tier subset"
+	@echo "aws-deploy  build, push and deploy to real AWS                  | aws-destroy     tear it all down"
 
 env: ## Create .env from the example if missing
 	uv run python -c "import os,shutil; os.path.exists('.env') or shutil.copy('.env.example','.env')"
@@ -92,5 +94,27 @@ eval:
 eval-report:
 	uv run python -m oncall_evals.run --report-only
 
+TF := cd infra/terraform && terraform
+
+tf-validate:
+	$(TF) fmt -check -recursive && terraform init -input=false -backend=false && terraform validate
+
+# Plan the FULL stack (all modules) and apply the free-tier subset against LocalStack: `make aws-local` first.
+aws-local:
+	$(COMPOSE) --profile aws up -d --wait localstack
+
 tf-plan:
-	cd infra/terraform && terraform init -input=false && terraform plan -input=false
+	$(TF) init -input=false && terraform plan -input=false -var target=localstack
+
+tf-apply-local:
+	$(TF) init -input=false && terraform apply -input=false -auto-approve -var-file=localstack.tfvars
+
+tf-destroy-local:
+	$(TF) destroy -input=false -auto-approve -var-file=localstack.tfvars
+
+# Real AWS (needs credentials + infra/terraform/aws.tfvars). Always pair with aws-destroy.
+aws-deploy:
+	bash infra/scripts/deploy-aws.sh
+
+aws-destroy:
+	bash infra/scripts/teardown-aws.sh

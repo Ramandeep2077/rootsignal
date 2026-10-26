@@ -1,0 +1,8 @@
+# Copy to aws.tfvars (gitignored) for a real deployment. Keep the budget alert on.
+target             = "aws"
+region             = "us-east-1"
+allowed_cidrs      = ["203.0.113.10/32"] # your IP
+image_tag          = "latest"
+llm_provider       = "mock" # rules-only agents: no GPU needed; set "ollama" + ollama_base_url to use a model server
+monthly_budget_usd = 20
+budget_alert_email = "you@example.com"

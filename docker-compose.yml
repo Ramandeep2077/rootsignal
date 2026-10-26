@@ -251,16 +251,14 @@ services:
       PHOENIX_WORKING_DIR: /mnt/data
     mem_limit: 768m
 
+  # Pinned to the last release that runs without a LocalStack account token (2026.03+ require one).
   localstack:
-    image: localstack/localstack:2026.10.3
+    image: localstack/localstack:4.14
     profiles: ["aws"]
     ports:
       - "4566:4566"
     environment:
-      SERVICES: s3,iam,sts,ec2,ecs,ecr,rds,logs,cloudfront,secretsmanager
-      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:-}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      SERVICES: s3,iam,sts,ec2,secretsmanager,logs
     mem_limit: 1g
 
 volumes:

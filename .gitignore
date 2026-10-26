@@ -50,3 +50,6 @@ crash.log
 .cache/
 evals/runs/
 *.log
+
+# Terraform var files with real settings
+infra/terraform/aws.tfvars

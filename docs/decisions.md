@@ -111,3 +111,22 @@ Newest phase last.
 | D67 | **Reuse the MCP SDK's OTel middleware** and propagate context via MCP `_meta`. | MCP's own convention; no custom wire format. |
 | D68 | Tracing export is **opt-in** (`make up-obs`); spans are still created so context propagates. | No exporter-error noise or overhead in the default stack; one switch turns on full traces. |
 | D69 | Root sampler drops health checks. | FastAPI now emits its own spans; container healthchecks every 10 s otherwise bury the interesting traces. |
+
+## Phase 8 — Evaluation suite
+
+| # | Decision | Why |
+|---|----------|-----|
+| D70 | **The harness exercises the real path** (simulator → Java alert service over HTTP → Kafka → agent service → MCP/Ollama → write-back → notification), running the agent service in-process so the model profile can be switched per run. | Measures the system that ships, including grouping latency and Kafka, not a unit-level shortcut. |
+| D71 | Scores per run: exact category match, LLM-as-judge (1–5, local 7B, temperature 0), service, action, runbook, grouping recall/precision, noise absorbed, time to summary/notification, tokens, cost, and "unsafe proposal pending approval". Results are written as JSONL per run, and the report is generated from them. | Every number in EVALS.md is reproducible from committed raw records; interrupted evals resume. |
+| D72 | Guardrail eval = static adversarial suite + safe controls (false positives) + execution-time tampering + **live prompt injection** against the real remediation model. | "Blocked 100%" is only meaningful if the model is actually tempted; the live test measures how often it falls for injections and checks that none get through. Writing the injections also found two denylist gaps (`replicas to 0`, `purge the topic`), now fixed and tested. |
+
+## Phase 9 — Deployment and CI
+
+| # | Decision | Why |
+|---|----------|-----|
+| D73 | AWS: ECS Fargate Spot, public subnets without NAT, Redpanda container, single-AZ `db.t4g.micro` RDS, one ALB, dashboard on Fargate (not S3/CloudFront). | Lowest-cost shape that still runs the whole system. The dashboard's dynamic incident route needs a server (or a URL scheme change) for a static export; one ALB serves both API and UI on the same origin. |
+| D74 | **One Terraform codebase, two targets** (`target = aws|localstack`) with per-module feature flags. | LocalStack's free tier lacks ECS/RDS/ECR/ELBv2: the full stack is *planned* there and the free subset *applied*, so CI checks the infrastructure without an AWS account or bill. |
+| D75 | **LocalStack pinned to 4.14.** | Releases since 2026.03 require an account auth token; the pinned version keeps the $0, no-signup setup (and CI) working. Upgrading means adding `LOCALSTACK_AUTH_TOKEN`. |
+| D76 | Generated secrets in Secrets Manager, injected as ECS task secrets; execution role may read only those two secrets. | No credentials in images, env files or Terraform outputs; least privilege. |
+| D77 | Cost guardrails: Budget alerts, 7-day logs, Container Insights off, and a teardown script that verifies nothing tagged is left. | "Don't pay for idle resources" is enforced by tooling, not memory. |
+| D78 | CI: Java verify (Testcontainers), Python lint + tests (pgvector service), dashboard lint/test/build, compose config, Docker image builds (cached, not pushed), Terraform fmt/validate + plan/apply against LocalStack on PRs. | Every artefact that ships is built and checked on every change. |
