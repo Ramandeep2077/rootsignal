@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  alert-service:
+    name: alert-service (Java)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: alert-service
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      # Testcontainers uses the runner's Docker daemon for Postgres + Redpanda.
+      - run: ./mvnw -B verify
+
+  python:
+    name: python services (agent, mcp, simulator, evals)
+    runs-on: ubuntu-latest
+    env:
+      LLM_PROVIDER: mock
+      EMBEDDINGS_PROVIDER: hash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --frozen --python 3.12
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest common simulator mcp-servers agent-service evals -m "not ollama"
+
+  dashboard:
+    name: dashboard (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test --if-present
+      - run: npm run build
+
+  compose:
+    name: docker compose config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: cp .env.example .env
+      - run: docker compose --profile app --profile observability --profile aws config --quiet
