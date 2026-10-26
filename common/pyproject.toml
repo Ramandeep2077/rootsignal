@@ -6,7 +6,14 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
+    "psycopg[binary]>=3.2",
+    "pgvector>=0.3",
+    "numpy>=2.0",
 ]
+
+[project.optional-dependencies]
+# Local sentence-transformers embeddings via ONNX (no PyTorch, ~100 MB instead of ~2 GB).
+local-embeddings = ["fastembed>=0.4"]
 
 [build-system]
 requires = ["uv_build>=0.9,<0.14"]

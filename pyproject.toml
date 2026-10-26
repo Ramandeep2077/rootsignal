@@ -34,7 +34,8 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
-ignore = ["RUF001", "RUF002", "RUF003"]
+# E501: the formatter owns line length; long string literals are left intact.
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["oncall_common", "oncall_sim", "oncall_mcp", "oncall_agent", "oncall_evals"]
