@@ -335,6 +335,9 @@ def render(
         "- **Time to summary** runs from the first alert reaching the alert service to the analysis being "
         "stored. It includes the ~6-20 s grouping window and CPU/iGPU inference on one laptop, with other "
         "workloads running.",
+        "- **Action accuracy** counts a proposal as correct when it is one of the scenario's expected runbook "
+        "actions. A few actions (e.g. `enable_circuit_breaker`, `scale_out`) appear in several runbooks, so an "
+        "action can be acceptable even when the diagnosis is wrong; read it together with category accuracy.",
         "- **Cost** is $0 because the models run locally; token counts are reported so hosted-model cost can be "
         "estimated with any price list.",
         "",

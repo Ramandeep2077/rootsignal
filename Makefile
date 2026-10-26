@@ -17,7 +17,7 @@ RCA_MODEL ?= qwen2.5:7b
 
 .DEFAULT_GOAL := help
 .PHONY: help env infra up up-obs down clean logs ps models test test-java test-python test-dashboard \
-        lint sim sim-all eval tf-plan
+        lint sim sim-all eval eval-report tf-plan
 
 help: ## Show available targets
 	@echo "infra       start postgres + redpanda only"
@@ -81,8 +81,16 @@ sim:
 sim-all:
 	uv run python simulator/run.py --all
 
+PROFILES ?= routed=3,heuristic=2,small_only=2
+
+# Stops the dockerised agent (the harness runs its own, per model profile), evaluates, then restarts it.
 eval:
-	uv run python -m oncall_evals.run --runs $(RUNS)
+	$(COMPOSE) stop agent-service
+	uv run python -m oncall_evals.run --profiles $(PROFILES) --runs $(RUNS)
+	$(COMPOSE) $(APP) start agent-service
+
+eval-report:
+	uv run python -m oncall_evals.run --report-only
 
 tf-plan:
 	cd infra/terraform && terraform init -input=false && terraform plan -input=false
