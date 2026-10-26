@@ -1,0 +1,253 @@
+# Local development stack for oncall-copilot.
+#
+# Profiles keep the default footprint small on a 16 GB laptop:
+#   (default)       postgres + redpanda               -> `make infra`
+#   app             all application services          -> `make up`
+#   observability   jaeger (OTel traces) + phoenix (LLM traces)
+#   tools           redpanda console
+#   aws             localstack (for terraform in infra/)
+#
+# Ollama runs natively on the host (faster on CPU than inside the Docker VM);
+# containers reach it via host.docker.internal.
+
+name: oncall-copilot
+
+x-otel-env: &otel-env
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+  OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
+  OTEL_METRICS_EXPORTER: none
+  OTEL_LOGS_EXPORTER: none
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg17-trixie
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-oncall}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oncall-local-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-oncall}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 512m
+
+  redpanda:
+    image: redpandadata/redpanda:v26.2.6
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --memory=768M
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:${KAFKA_EXTERNAL_PORT:-19092}
+    ports:
+      - "${KAFKA_EXTERNAL_PORT:-19092}:19092"
+    volumes:
+      - redpanda:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy:.+true' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    mem_limit: 1g
+
+  # One-shot job: create the topics the system uses, then exit.
+  redpanda-init:
+    image: redpandadata/redpanda:v26.2.6
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >-
+        rpk topic create ${ALERTS_TOPIC:-alerts.raw} ${DECISIONS_TOPIC:-incidents.decisions}
+        -p 3 -r 1 -X brokers=redpanda:9092 || true
+    restart: "no"
+
+  console:
+    image: redpandadata/console:v3.13.1
+    profiles: ["tools"]
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports:
+      - "8081:8080"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+  alert-service:
+    build: ./alert-service
+    profiles: ["app"]
+    environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: alert-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-oncall}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-oncall}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-oncall-local-dev}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      ONCALL_ALERTS_TOPIC: ${ALERTS_TOPIC:-alerts.raw}
+      ONCALL_DECISIONS_TOPIC: ${DECISIONS_TOPIC:-incidents.decisions}
+      ONCALL_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-change-me-local-only}
+      ONCALL_CORS_ALLOWED_ORIGINS: ${DASHBOARD_URL:-http://localhost:3000}
+    ports:
+      - "${ALERT_SERVICE_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    mem_limit: 768m
+
+  mcp-servers:
+    build:
+      context: .
+      dockerfile: mcp-servers/Dockerfile
+    profiles: ["app"]
+    environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: mcp-servers
+      DATABASE_URL: postgresql://${POSTGRES_USER:-oncall}:${POSTGRES_PASSWORD:-oncall-local-dev}@postgres:5432/${POSTGRES_DB:-oncall}
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-local}
+      EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+    ports:
+      - "8101-8104:8101-8104"
+    volumes:
+      - models-cache:/root/.cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 1g
+
+  agent-service:
+    build:
+      context: .
+      dockerfile: agent-service/Dockerfile
+    profiles: ["app"]
+    environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: agent-service
+      DATABASE_URL: postgresql://${POSTGRES_USER:-oncall}:${POSTGRES_PASSWORD:-oncall-local-dev}@postgres:5432/${POSTGRES_DB:-oncall}
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      ALERTS_TOPIC: ${ALERTS_TOPIC:-alerts.raw}
+      ALERT_SERVICE_URL: http://alert-service:8080
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-change-me-local-only}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      TRIAGE_MODEL: ${TRIAGE_MODEL:-}
+      INVESTIGATOR_MODEL: ${INVESTIGATOR_MODEL:-}
+      REMEDIATION_MODEL: ${REMEDIATION_MODEL:-}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-240}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-2}
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-local}
+      EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+      TRIAGE_WINDOW_SECONDS: ${TRIAGE_WINDOW_SECONDS:-20}
+      SIMILARITY_THRESHOLD: ${SIMILARITY_THRESHOLD:-0.55}
+      REMEDIATION_DRY_RUN: ${REMEDIATION_DRY_RUN:-true}
+      LOGS_MCP_URL: http://mcp-servers:8101/mcp
+      METRICS_MCP_URL: http://mcp-servers:8102/mcp
+      DEPLOYS_MCP_URL: http://mcp-servers:8103/mcp
+      RUNBOOKS_MCP_URL: http://mcp-servers:8104/mcp
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-http://mock-slack:8090/webhook}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      NOTIFY_EMAIL_TO: ${NOTIFY_EMAIL_TO:-oncall@example.test}
+      NOTIFY_EMAIL_FROM: ${NOTIFY_EMAIL_FROM:-copilot@example.test}
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${AGENT_SERVICE_PORT:-8000}:8000"
+    volumes:
+      - models-cache:/root/.cache
+    depends_on:
+      alert-service:
+        condition: service_healthy
+      mcp-servers:
+        condition: service_started
+    mem_limit: 1536m
+
+  dashboard:
+    build:
+      context: ./dashboard
+      args:
+        NEXT_PUBLIC_API_URL: ${ALERT_SERVICE_URL:-http://localhost:8080}
+    profiles: ["app"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      alert-service:
+        condition: service_healthy
+    mem_limit: 384m
+
+  # Stand-in for a Slack incoming webhook so notifications work at $0 and offline.
+  mock-slack:
+    build:
+      context: .
+      dockerfile: agent-service/Dockerfile
+    profiles: ["app"]
+    command: ["python", "-m", "oncall_agent.notifications.mock_slack"]
+    ports:
+      - "8090:8090"
+    mem_limit: 128m
+
+  # Local SMTP sink + web UI for the email fallback (http://localhost:8025).
+  mailpit:
+    image: axllent/mailpit:v1.32.0
+    profiles: ["app"]
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    mem_limit: 128m
+
+  jaeger:
+    image: jaegertracing/jaeger:2.22.0
+    profiles: ["observability"]
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    mem_limit: 384m
+
+  phoenix:
+    image: arizephoenix/phoenix:version-20.26
+    profiles: ["observability"]
+    ports:
+      - "6006:6006"
+    volumes:
+      - phoenix:/mnt/data
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+    mem_limit: 768m
+
+  localstack:
+    image: localstack/localstack:2026.10.3
+    profiles: ["aws"]
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3,iam,sts,ec2,ecs,ecr,rds,logs,cloudfront,secretsmanager
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    mem_limit: 1g
+
+volumes:
+  pgdata:
+  redpanda:
+  models-cache:
+  phoenix:
