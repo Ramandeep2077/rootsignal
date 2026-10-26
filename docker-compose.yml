@@ -130,6 +130,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      # The runbooks server starts last, after the runbook index is built.
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8104/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
     mem_limit: 1g
 
   agent-service:
@@ -178,7 +185,7 @@ services:
       alert-service:
         condition: service_healthy
       mcp-servers:
-        condition: service_started
+        condition: service_healthy
     mem_limit: 1536m
 
   dashboard:

@@ -19,4 +19,5 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8101 8102 8103 8104
-CMD ["uvicorn", "oncall_mcp.app:app", "--host", "0.0.0.0", "--port", "8101"]
+# Indexes runbooks (pgvector) on start, then serves logs/metrics/deploys/runbooks MCP on :8101-8104.
+CMD ["oncall-mcp"]
