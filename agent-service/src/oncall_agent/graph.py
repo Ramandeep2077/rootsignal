@@ -10,6 +10,8 @@ Nothing is ever executed here. The furthest an incident gets is ``PENDING_APPROV
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
+from functools import wraps
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -20,6 +22,7 @@ from oncall_agent.agents import RunContext, investigator, remediation, triage
 from oncall_agent.notifications import IncidentNotice, NotificationError
 from oncall_agent.schemas import ProposedAction, RootCauseHypothesis, TriageSummary
 from oncall_common.taxonomy import ActionType, RootCauseCategory
+from oncall_common.telemetry import CHAIN, span
 
 log = logging.getLogger(__name__)
 
@@ -156,14 +159,39 @@ async def notify_node(state: IncidentState, runtime: Runtime[RunContext]) -> Inc
     return {"notified": True, "notified_via": channel}
 
 
+Node = Callable[[IncidentState, Runtime[RunContext]], Awaitable[IncidentState]]
+
+
+def traced(name: str, node: Node) -> Node:
+    """Wrap a node in an OpenTelemetry span so each step shows up in Jaeger and Phoenix."""
+
+    @wraps(node)
+    async def run(state: IncidentState, runtime: Runtime[RunContext]) -> IncidentState:
+        with span(
+            f"agent.{name}", kind=CHAIN, attributes={"incident.id": state.get("incident_id")}
+        ) as current:
+            update = await node(state, runtime)
+            for key in ("status", "notified"):
+                if key in update:
+                    current.set_attribute(f"incident.{key}", str(update[key]))
+            if update.get("hypothesis"):
+                current.set_attribute("incident.root_cause", update["hypothesis"]["category"])
+            return update
+
+    return run
+
+
 def build_graph():
     graph = StateGraph(IncidentState, context_schema=RunContext)
-    graph.add_node("triage", triage_node)
-    graph.add_node("investigate", investigate_node)
-    graph.add_node("remediate", remediate_node)
-    graph.add_node("guardrails", guardrails_node)
-    graph.add_node("persist", persist_node)
-    graph.add_node("notify", notify_node)
+    for name, node in (
+        ("triage", triage_node),
+        ("investigate", investigate_node),
+        ("remediate", remediate_node),
+        ("guardrails", guardrails_node),
+        ("persist", persist_node),
+        ("notify", notify_node),
+    ):
+        graph.add_node(name, traced(name, node))
     graph.add_edge(START, "triage")
     graph.add_edge("triage", "investigate")
     graph.add_conditional_edges("investigate", after_investigation, ["remediate", "persist"])

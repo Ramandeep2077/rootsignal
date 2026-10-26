@@ -15,6 +15,8 @@ from typing import Any
 from mcp import Client
 from mcp.server.mcpserver import MCPServer
 
+from oncall_common.telemetry import TOOL, clip, inject_context, span
+
 log = logging.getLogger(__name__)
 
 # Tools the investigator may call by itself (the runbook tools are used by the remediation agent).
@@ -78,10 +80,22 @@ class Toolbox:
         if name not in self._tools:
             raise ToolError(f"unknown tool '{name}'; available: {', '.join(self.tool_names)}")
         server, _ = self._tools[name]
-        result = await self._clients[server].call_tool(name, arguments or {})
-        text = result.content[0].text if result.content else ""
-        if result.is_error:
-            raise ToolError(text or f"{name} failed")
+        attributes = {
+            "tool.name": name,
+            "gen_ai.tool.name": name,
+            "mcp.server": server,
+            "input.value": clip(json.dumps(arguments or {}, default=str)),
+        }
+        with span(f"tool {name}", kind=TOOL, attributes=attributes) as current:
+            # W3C trace context travels in the MCP request's _meta, so server-side spans join this trace.
+            result = await self._clients[server].call_tool(
+                name, arguments or {}, meta=inject_context() or None
+            )
+            text = result.content[0].text if result.content else ""
+            current.set_attribute("output.value", clip(text))
+            if result.is_error:
+                current.set_attribute("error.type", "tool_error")
+                raise ToolError(text or f"{name} failed")
         try:
             return json.loads(text)
         except json.JSONDecodeError:

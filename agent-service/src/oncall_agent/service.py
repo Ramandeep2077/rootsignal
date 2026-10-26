@@ -19,6 +19,8 @@ from typing import Any
 
 from aiokafka import AIOKafkaConsumer
 from mcp.server.mcpserver import MCPServer
+from opentelemetry import context as otel_context
+from opentelemetry.trace import SpanKind
 
 from oncall_agent.agents import RunContext, max_severity
 from oncall_agent.agents.triage import heuristic_summary
@@ -36,6 +38,7 @@ from oncall_agent.settings import AgentSettings
 from oncall_agent.tools import Toolbox
 from oncall_agent.trace import Trace
 from oncall_common.embeddings import Embedder, get_embedder
+from oncall_common.telemetry import AGENT, extract_context, inject_context, link_from, span
 
 log = logging.getLogger(__name__)
 LOW_ONLY = {"LOW", "INFO"}
@@ -229,6 +232,28 @@ class AgentService:
         )
         if all(a["severity"] in LOW_ONLY for a in alerts):
             return await self._record_low_severity(incident_id, alerts, ctx)
+        # One trace per incident, linked to the traces of the alerts it groups (many-to-one: links, not parents).
+        links = [link for a in alerts[:32] if (link := link_from(a.get("_trace")))]
+        attributes = {
+            "incident.id": incident_id,
+            "incident.alert_count": len(alerts),
+            "llm.routing_profile": self.routing.profile,
+        }
+        with span("incident.investigate", kind=AGENT, links=links, attributes=attributes) as current:
+            state = await self._run_graph(incident_id, alerts, ctx)
+            usage = ctx.usage.summary()
+            current.set_attributes(
+                {
+                    "incident.status": str(state.get("status")),
+                    "llm.token_count.total": usage["total_tokens"],
+                    "incident.cost_usd": usage["estimated_cost_usd"],
+                }
+            )
+            return state
+
+    async def _run_graph(
+        self, incident_id: str | None, alerts: list[dict[str, Any]], ctx: RunContext
+    ) -> dict[str, Any]:
         try:
             state = await self.graph.ainvoke({"incident_id": incident_id, "alerts": alerts}, context=ctx)
             self.stats.incidents_analyzed += 1
@@ -287,11 +312,23 @@ class AgentService:
                 await consumer.start()
                 log.info("consuming %s", topic)
                 async for message in consumer:
+                    # Continue the producer's trace: Spring Kafka puts traceparent in the record headers.
+                    token = otel_context.attach(extract_context(message.headers))
                     try:
-                        await handler(message.value)
+                        with span(
+                            f"{topic} process",
+                            span_kind=SpanKind.CONSUMER,
+                            attributes={"messaging.system": "kafka", "messaging.destination.name": topic},
+                        ):
+                            value = message.value
+                            if isinstance(value, dict):
+                                value["_trace"] = inject_context()
+                            await handler(value)
                     except Exception as exc:
                         log.exception("handler for %s failed", topic)
                         self.stats.last_error = str(exc)
+                    finally:
+                        otel_context.detach(token)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:

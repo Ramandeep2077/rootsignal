@@ -11,6 +11,9 @@ spring:
       ddl-auto: validate
   kafka:
     bootstrap-servers: localhost:19092
+    template:
+      # Adds a producer span and W3C traceparent header to every record -> the Python consumer continues the trace.
+      observation-enabled: true
     producer:
       acks: all
       properties:
@@ -29,6 +32,17 @@ management:
     web:
       exposure:
         include: health,info
+  tracing:
+    sampling:
+      probability: 1.0
+    # Spans are always created (so traceparent propagates into Kafka headers); export is opt-in.
+    export:
+      enabled: ${ONCALL_TRACING_EXPORT:false}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}/v1/traces
 
 springdoc:
   api-docs:

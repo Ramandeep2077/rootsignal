@@ -18,6 +18,7 @@ from starlette.responses import JSONResponse
 
 from oncall_common.db import connection, ensure_schema
 from oncall_common.embeddings import get_embedder
+from oncall_common.telemetry import setup_tracing
 from oncall_mcp.servers import SERVERS
 from oncall_mcp.tools.runbooks import ingest_runbooks
 
@@ -57,6 +58,7 @@ def main() -> None:
     parser.add_argument("--host", default=os.environ.get("MCP_HOST", "0.0.0.0"))
     args = parser.parse_args()
 
+    setup_tracing("mcp-servers")
     if args.stdio:
         SERVERS[args.stdio][0]().run("stdio")
         return

@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 from oncall_agent.service import AgentService
 from oncall_agent.settings import get_settings
+from oncall_common.telemetry import setup_tracing
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 for noisy in ("httpx", "aiokafka", "mcp.client.streamable_http"):
@@ -18,6 +19,7 @@ for noisy in ("httpx", "aiokafka", "mcp.client.streamable_http"):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    setup_tracing("agent-service")
     service = AgentService(get_settings())
     await service.start()
     app.state.service = service

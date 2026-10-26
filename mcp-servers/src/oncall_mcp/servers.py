@@ -7,6 +7,7 @@ from contextlib import AbstractContextManager
 from typing import Any
 
 import psycopg
+from mcp.server._otel import OpenTelemetryMiddleware
 from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
@@ -15,6 +16,8 @@ from oncall_common.embeddings import Embedder, get_embedder
 from oncall_mcp.tools import deploys, logs, metrics, runbooks
 
 ConnectionFactory = Callable[[], AbstractContextManager[psycopg.Connection]]
+# The SDK middleware opens a server span per request, parented to the trace context sent in _meta.
+MIDDLEWARE = [OpenTelemetryMiddleware()]
 READ_ONLY = ToolAnnotations(
     read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False
 )
@@ -27,7 +30,9 @@ def _run(factory: ConnectionFactory, fn: Callable[..., dict[str, Any]], **kwargs
 
 def build_logs_server(factory: ConnectionFactory = connection) -> MCPServer:
     server = MCPServer(
-        "logs-mcp", instructions="Read-only search over application logs of the shop's services."
+        "logs-mcp",
+        middleware=MIDDLEWARE,
+        instructions="Read-only search over application logs of the shop's services.",
     )
 
     @server.tool(annotations=READ_ONLY)
@@ -70,6 +75,7 @@ def build_logs_server(factory: ConnectionFactory = connection) -> MCPServer:
 def build_metrics_server(factory: ConnectionFactory = connection) -> MCPServer:
     server = MCPServer(
         "metrics-mcp",
+        middleware=MIDDLEWARE,
         instructions="Read-only service metrics: latency, errors, CPU, memory, "
         "disk, DB connections, Kafka lag.",
     )
@@ -109,7 +115,9 @@ def build_metrics_server(factory: ConnectionFactory = connection) -> MCPServer:
 
 def build_deploys_server(factory: ConnectionFactory = connection) -> MCPServer:
     server = MCPServer(
-        "deploys-mcp", instructions="Read-only history of deployments, config changes and flags."
+        "deploys-mcp",
+        middleware=MIDDLEWARE,
+        instructions="Read-only history of deployments, config changes and flags.",
     )
 
     @server.tool(annotations=READ_ONLY)
@@ -127,7 +135,11 @@ def build_deploys_server(factory: ConnectionFactory = connection) -> MCPServer:
 def build_runbooks_server(
     factory: ConnectionFactory = connection, embedder: Embedder | None = None
 ) -> MCPServer:
-    server = MCPServer("runbooks-mcp", instructions="Semantic search over the team's incident runbooks.")
+    server = MCPServer(
+        "runbooks-mcp",
+        middleware=MIDDLEWARE,
+        instructions="Semantic search over the team's incident runbooks.",
+    )
     _embedder: list[Embedder] = [embedder] if embedder else []
 
     def get() -> Embedder:

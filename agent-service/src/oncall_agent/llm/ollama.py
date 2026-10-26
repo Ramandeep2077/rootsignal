@@ -13,6 +13,7 @@ from typing import Any
 import httpx
 
 from oncall_agent.llm.base import ChatResult, LLMError, ToolCall
+from oncall_common.telemetry import LLM, clip, span
 
 
 class OllamaChat:
@@ -46,6 +47,33 @@ class OllamaChat:
             payload["tools"] = tools
         if schema:
             payload["format"] = schema
+        attributes = {
+            "llm.model_name": model,
+            "llm.provider": "ollama",
+            "gen_ai.system": "ollama",
+            "gen_ai.request.model": model,
+            "gen_ai.request.max_tokens": max_tokens,
+            "gen_ai.request.temperature": temperature,
+            "llm.tools_offered": len(tools or []),
+            "llm.structured_output": schema is not None,
+            "input.value": clip(messages[-1].get("content", "") if messages else ""),
+        }
+        with span(f"chat {model}", kind=LLM, attributes=attributes) as current:
+            result = await self._post(model, payload, timeout)
+            current.set_attributes(
+                {
+                    "llm.token_count.prompt": result.prompt_tokens,
+                    "llm.token_count.completion": result.completion_tokens,
+                    "llm.token_count.total": result.prompt_tokens + result.completion_tokens,
+                    "gen_ai.usage.input_tokens": result.prompt_tokens,
+                    "gen_ai.usage.output_tokens": result.completion_tokens,
+                    "output.value": clip(result.content or str([c.name for c in result.tool_calls])),
+                    "llm.tool_calls": len(result.tool_calls),
+                }
+            )
+            return result
+
+    async def _post(self, model: str, payload: dict[str, Any], timeout: float) -> ChatResult:
         started = time.perf_counter()
         try:
             response = await self._client.post(f"{self.base_url}/api/chat", json=payload, timeout=timeout)

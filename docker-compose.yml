@@ -12,9 +12,11 @@
 
 name: oncall-copilot
 
+# Tracing export is off by default; `make up-obs` turns it on and starts Jaeger + Phoenix.
 x-otel-env: &otel-env
   OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
-  OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
+  OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-none}
+  ONCALL_TRACING_EXPORT: ${ONCALL_TRACING_EXPORT:-false}
   OTEL_METRICS_EXPORTER: none
   OTEL_LOGS_EXPORTER: none
 

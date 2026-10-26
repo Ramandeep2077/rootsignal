@@ -40,6 +40,8 @@ infra: env
 up: env
 	$(COMPOSE) $(APP) up -d --build --wait
 
+up-obs: export OTEL_TRACES_EXPORTER = otlp
+up-obs: export ONCALL_TRACING_EXPORT = true
 up-obs: env
 	$(COMPOSE) $(APP) $(OBS) up -d --build --wait
 
