@@ -100,3 +100,14 @@ Newest phase last.
 | D61 | Metrics: one hero figure (noise reduction), stat tiles, and two single-series bar charts with direct value labels, hover tooltips and a table view. No legends (single series), no dual axes. | Follows the dataviz method: the headline number is a tile, not a chart; every chart has a table alternative. |
 | D62 | **Approve/Reject require a name**; buttons only render in `PENDING_APPROVAL`, and the panel states that approval triggers a dry run only. | Attributable decisions; the UI mirrors the backend state machine instead of trusting the client. |
 | D63 | Vitest + Testing Library for units (formatting, duplicate collapsing, badge labels, approval flow); Playwright for screenshots. | Fast unit tests in CI; real-browser rendering for visual checks and README images. |
+
+## Phase 7 — Observability
+
+| # | Decision | Why |
+|---|----------|-----|
+| D64 | **Jaeger for distributed traces + Arize Phoenix for LLM traces**, instead of Langfuse. | Both are single containers that take plain OTLP. Self-hosted Langfuse v3 needs ClickHouse, Redis and object storage, too heavy next to a 7B model on 16 GB. Phoenix gives the LLM-specific view (token counts, prompt/response, span hierarchy) from the same spans. |
+| D65 | **One incident trace linked (not parented) to N alert traces.** | Correct OTel modelling of fan-in batch processing; each alert's own trace still runs end to end from Java through Kafka to Python. |
+| D66 | **OpenInference + GenAI semantic-convention attributes** on LLM/tool spans. | Vendor-neutral: Phoenix, Jaeger's GenAI view and other OTel backends all read them. |
+| D67 | **Reuse the MCP SDK's OTel middleware** and propagate context via MCP `_meta`. | MCP's own convention; no custom wire format. |
+| D68 | Tracing export is **opt-in** (`make up-obs`); spans are still created so context propagates. | No exporter-error noise or overhead in the default stack; one switch turns on full traces. |
+| D69 | Root sampler drops health checks. | FastAPI now emits its own spans; container healthchecks every 10 s otherwise bury the interesting traces. |
