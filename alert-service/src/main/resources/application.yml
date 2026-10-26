@@ -1,8 +1,37 @@
 spring:
   application:
     name: alert-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/oncall
+    username: oncall
+    password: oncall-local-dev
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  kafka:
+    bootstrap-servers: localhost:19092
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        linger.ms: 5
+
+oncall:
+  alerts-topic: alerts.raw
+  decisions-topic: incidents.decisions
+  # Shared secret for the /api/internal/** endpoints the agent service calls.
+  internal-api-token: change-me-local-only
+  cors-allowed-origins: http://localhost:3000
+
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
