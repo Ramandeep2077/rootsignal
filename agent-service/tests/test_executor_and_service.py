@@ -72,6 +72,8 @@ async def test_service_groups_storm_creates_one_incident_and_analyses_it(pg_dsn,
         await service.stop()
 
     statuses = sorted(i.get("status") for i in client.incidents.values())
+    notified = [i for i in client.incidents.values() if i.get("notified")]
+    assert len(notified) == 1, "one notification for the storm; none for the informational alert"
     assert len(client.incidents) == 2, "storm -> 1 incident, background alert -> 1 incident"
     assert statuses == ["NEEDS_HUMAN", "PENDING_APPROVAL"]
     main = max(client.incidents.values(), key=lambda i: len(i["alertIds"]))

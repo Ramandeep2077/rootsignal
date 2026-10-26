@@ -30,7 +30,7 @@ from oncall_agent.guardrails import GuardrailPolicy
 from oncall_agent.llm.base import ChatModel
 from oncall_agent.llm.ollama import OllamaChat
 from oncall_agent.llm.router import ModelRouter, UsageTracker
-from oncall_agent.notifications import LogNotifier, Notifier
+from oncall_agent.notifications import Notifier, build_notifier
 from oncall_agent.routing import Routing, load_routing
 from oncall_agent.settings import AgentSettings
 from oncall_agent.tools import Toolbox
@@ -48,6 +48,7 @@ class Stats:
     alerts_attached_late: int = 0
     incidents_analyzed: int = 0
     incidents_failed: int = 0
+    notifications_sent: int = 0
     last_error: str | None = None
     started_at: float = field(default_factory=time.time)
 
@@ -81,7 +82,7 @@ class AgentService:
             "runbooks": settings.runbooks_mcp_url,
         }
         self.embedder = embedder
-        self.notifier = notifier or LogNotifier()
+        self.notifier = notifier or build_notifier(settings)
         self.alert_client = alert_client or AlertServiceClient(
             settings.alert_service_url, settings.internal_api_token
         )
@@ -224,12 +225,15 @@ class AgentService:
             policy=self.policy,
             alert_client=self.alert_client,
             notifier=self.notifier,
+            dashboard_url=self.settings.dashboard_url,
         )
         if all(a["severity"] in LOW_ONLY for a in alerts):
             return await self._record_low_severity(incident_id, alerts, ctx)
         try:
             state = await self.graph.ainvoke({"incident_id": incident_id, "alerts": alerts}, context=ctx)
             self.stats.incidents_analyzed += 1
+            if state.get("notified"):
+                self.stats.notifications_sent += 1
             return state
         except Exception as exc:
             log.exception("graph failed for incident %s", incident_id)

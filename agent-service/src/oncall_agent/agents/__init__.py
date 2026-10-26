@@ -25,6 +25,7 @@ class RunContext:
     policy: GuardrailPolicy
     alert_client: Any = None  # AlertServiceClient; None in pure graph tests
     notifier: Any = None  # Notifier; None disables notifications
+    dashboard_url: str = "http://localhost:3000"
 
 
 def max_severity(alerts: list[dict[str, Any]]) -> str:

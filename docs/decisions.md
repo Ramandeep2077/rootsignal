@@ -78,3 +78,13 @@ Newest phase last.
 | D49 | **Grouping = fingerprint OR embedding similarity ≥ 0.55 OR topology adjacency (MEDIUM+ only)**; groups close after 6 s quiet or 20 s total; late alerts attach to the incident for 10 min. | Duplicates, re-worded duplicates from other tools, and cascading symptoms all merge; low-severity background alerts don't get absorbed by adjacency alone (a test checks this on all 12 scenarios). Limitation: two simultaneous independent failures in adjacent services would merge. |
 | D50 | Low/INFO-only groups skip LLM investigation and go straight to `NEEDS_HUMAN`. | Saves several minutes of CPU inference per informational alert. |
 | D51 | One investigation at a time (`MAX_CONCURRENT_INVESTIGATIONS=1`). | A single CPU/iGPU serialises inference anyway; parallel requests would just thrash. |
+
+## Phase 5 — Notifications
+
+| # | Decision | Why |
+|---|----------|-----|
+| D52 | **One notification per incident**, sent by the graph's final node after the analysis is persisted; late-attached alerts never re-notify. | The point of the system is replacing an alert storm with one actionable message. |
+| D53 | **Informational-only incidents aren't announced.** | They stay visible on the dashboard; paging people for them is noise. |
+| D54 | **Slack Block Kit via incoming webhook, then SMTP email as fallback** (`FallbackNotifier`: first channel to succeed wins). | Slack is where on-call lives; email covers a Slack outage. Delivery failure never fails the incident pipeline; it's logged and the incident is simply not marked notified. |
+| D55 | **Bundled mock Slack webhook** (`mock-slack`, `GET :8090/messages`) and **Mailpit** (`:8025`) in Compose. | Notifications work offline at $0; set `SLACK_WEBHOOK_URL` to a real webhook to use real Slack. |
+| D56 | The message carries title, severity, services, alert count, root-cause hypothesis and confidence, proposed action with risk, a link to the dashboard (approve/reject happens there, not in Slack) and token/cost usage. | Approving from a chat button would bypass the authenticated review UI; the link keeps the human decision in one audited place. |

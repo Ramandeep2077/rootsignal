@@ -17,6 +17,7 @@ from langgraph.runtime import Runtime
 
 from oncall_agent import guardrails
 from oncall_agent.agents import RunContext, investigator, remediation, triage
+from oncall_agent.notifications import IncidentNotice, NotificationError
 from oncall_agent.schemas import ProposedAction, RootCauseHypothesis, TriageSummary
 from oncall_common.taxonomy import ActionType, RootCauseCategory
 
@@ -35,6 +36,7 @@ class IncidentState(TypedDict, total=False):
     summary: str
     error: str | None
     notified: bool
+    notified_via: str
 
 
 async def triage_node(state: IncidentState, runtime: Runtime[RunContext]) -> IncidentState:
@@ -139,17 +141,19 @@ async def persist_node(state: IncidentState, runtime: Runtime[RunContext]) -> In
 
 
 async def notify_node(state: IncidentState, runtime: Runtime[RunContext]) -> IncidentState:
+    """One summary message per incident; failures are logged, never fatal."""
     ctx = runtime.context
     if not ctx.notifier:
         return {"notified": False}
+    notice = IncidentNotice.from_state(state, ctx.dashboard_url, ctx.usage.summary())
     try:
-        await ctx.notifier.notify(state)
-    except Exception as exc:
-        log.warning("notification failed: %s", exc)
+        channel = await ctx.notifier.notify(notice)
+    except NotificationError as exc:
+        log.warning("notification failed for incident %s: %s", state.get("incident_id"), exc)
         return {"notified": False}
     if ctx.alert_client and state.get("incident_id"):
         await ctx.alert_client.mark_notified(state["incident_id"])
-    return {"notified": True}
+    return {"notified": True, "notified_via": channel}
 
 
 def build_graph():
