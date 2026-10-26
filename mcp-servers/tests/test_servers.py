@@ -13,8 +13,7 @@ from oncall_mcp.servers import (
     build_runbooks_server,
 )
 from oncall_mcp.tools.runbooks import ingest_runbooks
-
-from .conftest import load_scenario
+from oncall_sim.testing import load_scenario
 
 EXPECTED_TOOLS = {
     build_logs_server: {"log_error_summary", "search_logs"},

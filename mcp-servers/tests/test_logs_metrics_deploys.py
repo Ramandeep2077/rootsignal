@@ -3,8 +3,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from oncall_common.db import connect
 from oncall_mcp.tools import deploys, logs, metrics
-
-from .conftest import load_scenario
+from oncall_sim.testing import load_scenario
 
 pytestmark = pytest.mark.integration
 
