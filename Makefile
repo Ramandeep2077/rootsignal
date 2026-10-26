@@ -64,7 +64,7 @@ test-python:
 	uv run pytest common simulator mcp-servers agent-service evals
 
 test-java:
-	cd alert-service && $(MVNW) -B test
+	cd alert-service && $(MVNW) -B verify
 
 test-dashboard:
 	cd dashboard && npm run lint && npm test --if-present
