@@ -49,6 +49,8 @@ async def serve_all(host: str) -> None:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+    for noisy in ("mcp.server.streamable_http", "mcp.server.lowlevel.server", "httpx"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
     parser = argparse.ArgumentParser(description="oncall-copilot MCP servers")
     parser.add_argument("--stdio", choices=sorted(SERVERS), help="serve one server over stdio")
     parser.add_argument("--ingest", action="store_true", help="index runbooks and exit")

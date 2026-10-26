@@ -63,8 +63,14 @@ def load_runbooks(directory: Path = RUNBOOK_DIR) -> list[Runbook]:
     return [parse_runbook(p.read_text(encoding="utf-8")) for p in sorted(directory.glob("*.md"))]
 
 
+def chunk_text(rb: Runbook, heading: str, text: str) -> str:
+    """Text that gets embedded: category tags make retrieval robust to wording differences."""
+    categories = ", ".join(c.replace("_", " ") for c in rb.categories)
+    return f"{rb.title} (categories: {categories}). {heading}. {text}"
+
+
 def _corpus_hash(runbooks: list[Runbook], model: str) -> str:
-    digest = hashlib.sha256(model.encode())
+    digest = hashlib.sha256(f"{model}|chunking-v2".encode())
     for rb in runbooks:
         digest.update(rb.id.encode())
         digest.update(rb.body.encode())
@@ -85,7 +91,7 @@ def ingest_runbooks(conn: psycopg.Connection, embedder: Embedder, directory: Pat
             return cur.fetchone()["n"]
 
         chunks = [(rb, heading, text) for rb in runbooks for heading, text in rb.sections()]
-        vectors = embedder.embed([f"{rb.title}. {heading}. {text}" for rb, heading, text in chunks])
+        vectors = embedder.embed([chunk_text(rb, heading, text) for rb, heading, text in chunks])
         cur.execute("DELETE FROM knowledge.runbooks")  # cascades to chunks
         for rb in runbooks:
             cur.execute(
