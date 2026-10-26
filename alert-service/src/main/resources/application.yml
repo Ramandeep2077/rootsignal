@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: alert-service
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
