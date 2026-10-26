@@ -1,0 +1,62 @@
+# Model routing: the ONE place that decides which model each agent uses.
+#
+# - `profile` picks a routing profile (override with MODEL_PROFILE).
+# - Per-agent env vars (TRIAGE_MODEL, INVESTIGATOR_MODEL, REMEDIATION_MODEL, JUDGE_MODEL) override the profile.
+# - The special model name "heuristic" means the deterministic rule-based implementation (no LLM).
+# - `fallbacks` are tried in order when the primary model times out or errors; the heuristic is always the
+#   last resort, so an incident always gets an analysis.
+
+profile: routed
+
+defaults:
+  timeout_seconds: 240
+  max_retries: 2          # per model, with exponential backoff
+  temperature: 0.1
+  num_ctx: 8192
+
+agents:
+  triage:
+    max_tokens: 250
+    temperature: 0.0
+  investigator:
+    max_tokens: 450
+    max_tool_calls: 3     # follow-up tool calls after the pre-fetched evidence pack
+    reasoning_max_tokens: 160  # cap the free-text turn; the JSON verdict carries the detail
+    prefetch_evidence: true
+  remediation:
+    max_tokens: 450
+  judge:
+    max_tokens: 200
+    temperature: 0.0
+
+profiles:
+  # Small model for cheap, high-volume triage; larger model for reasoning-heavy RCA and remediation.
+  routed:
+    triage: {model: "qwen2.5:1.5b", fallbacks: []}
+    investigator: {model: "qwen2.5:7b", fallbacks: ["qwen2.5:1.5b"]}
+    remediation: {model: "qwen2.5:7b", fallbacks: ["qwen2.5:1.5b"]}
+    judge: {model: "qwen2.5:7b", fallbacks: []}
+  # Baseline: the small model everywhere.
+  small_only:
+    triage: {model: "qwen2.5:1.5b", fallbacks: []}
+    investigator: {model: "qwen2.5:1.5b", fallbacks: []}
+    remediation: {model: "qwen2.5:1.5b", fallbacks: []}
+    judge: {model: "qwen2.5:7b", fallbacks: []}
+  # Baseline: the large model everywhere.
+  large_only:
+    triage: {model: "qwen2.5:7b", fallbacks: []}
+    investigator: {model: "qwen2.5:7b", fallbacks: []}
+    remediation: {model: "qwen2.5:7b", fallbacks: []}
+    judge: {model: "qwen2.5:7b", fallbacks: []}
+  # No LLM at all: rules only. Also what tests and CI use (LLM_PROVIDER=mock).
+  heuristic:
+    triage: {model: "heuristic", fallbacks: []}
+    investigator: {model: "heuristic", fallbacks: []}
+    remediation: {model: "heuristic", fallbacks: []}
+    judge: {model: "heuristic", fallbacks: []}
+
+# USD per 1M tokens. Local open-weight models cost $0 to call; electricity/hardware are not modelled.
+pricing:
+  "qwen2.5:1.5b": {input: 0.0, output: 0.0}
+  "qwen2.5:7b": {input: 0.0, output: 0.0}
+  "heuristic": {input: 0.0, output: 0.0}
