@@ -1,13 +1,13 @@
 import pytest
 
-from oncall_agent.executor import DryRunExecutor
-from oncall_agent.guardrails import GuardrailPolicy
-from oncall_agent.service import AgentService
-from oncall_agent.settings import AgentSettings
-from oncall_agent.testing import FakeAlertClient
-from oncall_common.embeddings import HashEmbedder
-from oncall_sim.testing import as_events
-from oncall_sim.testing import load_scenario as load
+from rootsignal_agent.executor import DryRunExecutor
+from rootsignal_agent.guardrails import GuardrailPolicy
+from rootsignal_agent.service import AgentService
+from rootsignal_agent.settings import AgentSettings
+from rootsignal_agent.testing import FakeAlertClient
+from rootsignal_common.embeddings import HashEmbedder
+from rootsignal_sim.testing import as_events
+from rootsignal_sim.testing import load_scenario as load
 
 SAFE = {
     "action": "renew_certificate",

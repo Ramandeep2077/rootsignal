@@ -1,6 +1,6 @@
 # Design decisions
 
-A running log of choices made while building oncall-copilot, with the reasoning behind each.
+A running log of choices made while building RootSignal, with the reasoning behind each.
 Newest phase last.
 
 ## Phase 0 — Project setup
@@ -58,7 +58,7 @@ Newest phase last.
 | D34 | Tools raise `ToolError` for bad input; unexpected exceptions are masked by the SDK. | The model gets actionable messages ("Known services: …"), but internals never leak. |
 | D35 | **fastembed (ONNX) for `all-MiniLM-L6-v2`** rather than `sentence-transformers` + PyTorch. | Same sentence-transformers model and vectors, about 2 GB smaller images, faster CPU startup. |
 | D36 | Runbooks are **markdown with front matter**, chunked per section, re-indexed only when the corpus hash changes. | Humans can edit runbooks in git; section-level chunks give precise retrieval; startup stays fast. |
-| D37 | DB tests use a dedicated `oncall_test` database created on demand; CI runs a pgvector service. | Tests never clobber dev data, and integration tests run in CI rather than being skipped. |
+| D37 | DB tests use a dedicated `rootsignal_test` database created on demand; CI runs a pgvector service. | Tests never clobber dev data, and integration tests run in CI rather than being skipped. |
 
 ## Phase 4 — Agent workflow
 
@@ -130,3 +130,14 @@ Newest phase last.
 | D76 | Generated secrets in Secrets Manager, injected as ECS task secrets; execution role may read only those two secrets. | No credentials in images, env files or Terraform outputs; least privilege. |
 | D77 | Cost guardrails: Budget alerts, 7-day logs, Container Insights off, and a teardown script that verifies nothing tagged is left. | "Don't pay for idle resources" is enforced by tooling, not memory. |
 | D78 | CI: Java verify (Testcontainers), Python lint + tests (pgvector service), dashboard lint/test/build, compose config, Docker image builds (cached, not pushed), Terraform fmt/validate + plan/apply against LocalStack on PRs. | Every artefact that ships is built and checked on every change. |
+
+## Phase 10 — Final evaluation and release prep
+
+| # | Decision | Why |
+|---|----------|-----|
+| D79 | Final eval: `routed` x3 seeds, `small_only` and `heuristic` x2 seeds (84 runs), guardrail suite recorded once and reused (`--no-guardrails` on resumes). | The headline profile gets the most samples; the comparison profiles fit in one evening on a laptop. Two laptop sleeps interrupted the run; the harness resumed from the JSONL, re-running only the in-flight run each time, so no result was edited or dropped. |
+| D80 | **Report the rules baseline beating the LLMs**, with the reason, instead of hiding it. | The keyword investigator was written against the simulator's own log vocabulary, so 100% is an upper bound, not a fair competitor. The honest claim is what the LLM path adds (evidence, explanation, runbook-backed fix) and its measured accuracy, not that it beats rules. |
+| D81 | `make demo` (one command from a fresh clone) and `make demo-lite` (`LLM_PROVIDER=mock`, no Ollama, ~20 s per incident). | A reviewer can see the whole pipeline in about two minutes on any 8 GB machine; the full LLM path is one more command. |
+| D82 | Pre-publish secrets check: `detect-secrets` over tracked files plus a pattern scan of the full git history. | Only finding: the documented local-dev Postgres password, which is a placeholder by design. |
+| D83 | **Hosted demo = the real dashboard in a read-only demo mode on Vercel**, fed by a snapshot of real eval incidents (one `routed` run per scenario, seed 1, right or wrong) with each run's eval label shown next to the diagnosis. | $0 and always on, with no backend to host or secure. Picking a fixed seed instead of the best runs keeps the demo representative (7/12 correct), and showing the ground truth on misdiagnoses is more convincing than hiding them. Approve/Reject stay clickable but only change the visitor's tab. The snapshot is served from `public/` so it isn't bundled into the JavaScript. |
+| D84 | **Renamed the project to RootSignal** (repo, packages `rootsignal_*`, Java `dev.rootsignal`, `ROOTSIGNAL_*` settings, database/user, Compose project, Terraform names). | A distinct name from existing "on-call copilot" products. Full rename rather than display-only so code, config and docs agree. Generic on-call terms (the role, the `oncall@example.test` placeholder) are unchanged. Eval records were not touched; `EVALS.md` regenerates identically from them. |

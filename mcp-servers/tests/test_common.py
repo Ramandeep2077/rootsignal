@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
-from oncall_mcp.tools.common import check_service, resolve_window
+from rootsignal_mcp.tools.common import check_service, resolve_window
 
 
 def test_relative_window_defaults_to_now():

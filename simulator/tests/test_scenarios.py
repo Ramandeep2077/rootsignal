@@ -3,9 +3,9 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from oncall_common.taxonomy import SERVICES, RootCauseCategory
-from oncall_sim.engine import simulate
-from oncall_sim.scenarios import SCENARIOS, get_scenario
+from rootsignal_common.taxonomy import SERVICES, RootCauseCategory
+from rootsignal_sim.engine import simulate
+from rootsignal_sim.scenarios import SCENARIOS, get_scenario
 
 END = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
 ALL = sorted(SCENARIOS)

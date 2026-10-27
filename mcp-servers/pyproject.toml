@@ -1,21 +1,21 @@
 [project]
-name = "oncall-mcp"
+name = "rootsignal-mcp"
 version = "0.1.0"
-description = "Read-only MCP servers (logs, metrics, deploys, runbooks) for oncall-copilot agents"
+description = "Read-only MCP servers (logs, metrics, deploys, runbooks) for rootsignal agents"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "oncall-common[local-embeddings]",
+    "rootsignal-common[local-embeddings]",
     "mcp>=2.3,<3",
     "uvicorn[standard]>=0.32",
     "pyyaml>=6",
 ]
 
 [project.scripts]
-oncall-mcp = "oncall_mcp.serve:main"
+rootsignal-mcp = "rootsignal_mcp.serve:main"
 
 [build-system]
 requires = ["uv_build>=0.9,<0.14"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = "oncall_mcp"
+module-name = "rootsignal_mcp"

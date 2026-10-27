@@ -1,9 +1,9 @@
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
-from oncall_common.db import connect
-from oncall_mcp.tools import deploys, logs, metrics
-from oncall_sim.testing import load_scenario
+from rootsignal_common.db import connect
+from rootsignal_mcp.tools import deploys, logs, metrics
+from rootsignal_sim.testing import load_scenario
 
 pytestmark = pytest.mark.integration
 

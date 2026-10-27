@@ -1,6 +1,6 @@
 """Shared pytest fixtures for all Python packages.
 
-Database tests use a dedicated ``oncall_test`` database (created on demand) so they never touch dev data.
+Database tests use a dedicated ``rootsignal_test`` database (created on demand) so they never touch dev data.
 They are skipped automatically when Postgres isn't reachable.
 """
 
@@ -12,14 +12,14 @@ from collections.abc import Iterator
 import psycopg
 import pytest
 
-from oncall_common.db import connect, ensure_schema
-from oncall_common.settings import BaseServiceSettings
+from rootsignal_common.db import connect, ensure_schema
+from rootsignal_common.settings import BaseServiceSettings
 
 # Tests must be deterministic and offline unless a test opts in explicitly.
 os.environ.setdefault("LLM_PROVIDER", "mock")
 os.environ.setdefault("EMBEDDINGS_PROVIDER", "hash")
 
-TEST_DB = "oncall_test"
+TEST_DB = "rootsignal_test"
 
 
 def _admin_dsn() -> str:

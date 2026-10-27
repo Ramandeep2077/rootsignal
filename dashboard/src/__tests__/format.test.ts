@@ -9,6 +9,7 @@ describe("format", () => {
     expect(formatDuration(42)).toBe("42 s");
     expect(formatDuration(225.3)).toBe("3m 45s");
     expect(formatDuration(120)).toBe("2m");
+    expect(formatDuration(179.6)).toBe("3m");
   });
 
   it("formats relative times", () => {

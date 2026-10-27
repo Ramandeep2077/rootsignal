@@ -5,15 +5,15 @@ import json
 import pytest
 from mcp import Client
 
-from oncall_common.embeddings import HashEmbedder
-from oncall_mcp.servers import (
+from rootsignal_common.embeddings import HashEmbedder
+from rootsignal_mcp.servers import (
     build_deploys_server,
     build_logs_server,
     build_metrics_server,
     build_runbooks_server,
 )
-from oncall_mcp.tools.runbooks import ingest_runbooks
-from oncall_sim.testing import load_scenario
+from rootsignal_mcp.tools.runbooks import ingest_runbooks
+from rootsignal_sim.testing import load_scenario
 
 EXPECTED_TOOLS = {
     build_logs_server: {"log_error_summary", "search_logs"},

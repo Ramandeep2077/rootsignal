@@ -8,7 +8,7 @@
 		<version>4.1.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>dev.oncallcopilot</groupId>
+	<groupId>dev.rootsignal</groupId>
 	<artifactId>alert-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>alert-service</name>

@@ -5,12 +5,12 @@ Two complementary views, both local and free:
 | Tool | URL | Shows |
 |---|---|---|
 | **Jaeger** (OpenTelemetry) | http://localhost:16686 | Distributed traces across Java, Kafka, Python agents, MCP servers and Ollama calls |
-| **Arize Phoenix** | http://localhost:6006 (project `oncall-copilot`) | LLM-centric view of the same spans: agent → chain → LLM/tool hierarchy, prompts and outputs, token counts, latency |
+| **Arize Phoenix** | http://localhost:6006 (project `rootsignal`) | LLM-centric view of the same spans: agent → chain → LLM/tool hierarchy, prompts and outputs, token counts, latency |
 
 Tracing is **off by default** (zero overhead and no exporter errors when Jaeger isn't running). Turn it on with:
 
 ```bash
-make up-obs        # full stack + Jaeger + Phoenix, with OTEL_TRACES_EXPORTER=otlp and ONCALL_TRACING_EXPORT=true
+make up-obs        # full stack + Jaeger + Phoenix, with OTEL_TRACES_EXPORTER=otlp and ROOTSIGNAL_TRACING_EXPORT=true
 ```
 
 ## What a trace looks like
@@ -47,8 +47,8 @@ OpenTelemetry pattern for many-to-one batch processing.
 
 - **Java** (`alert-service`): `spring-boot-starter-opentelemetry` (Micrometer Tracing → OTel → OTLP/HTTP).
   `spring.kafka.template.observation-enabled=true` adds producer spans and W3C `traceparent` headers to records.
-  Spans are always created (so propagation works); export is controlled by `ONCALL_TRACING_EXPORT`.
-- **Python** (`oncall_common.telemetry`): OTel SDK with OTLP/HTTP exporters to Jaeger and (agent service) Phoenix;
+  Spans are always created (so propagation works); export is controlled by `ROOTSIGNAL_TRACING_EXPORT`.
+- **Python** (`rootsignal_common.telemetry`): OTel SDK with OTLP/HTTP exporters to Jaeger and (agent service) Phoenix;
   `httpx` auto-instrumentation propagates context to the alert service, MCP servers and Ollama. Manual spans use
   **OpenInference** attributes (`openinference.span.kind`, `llm.model_name`, `llm.token_count.*`, `input.value`,
   `output.value`) plus the **GenAI semantic conventions** (`gen_ai.request.model`, `gen_ai.usage.*`), so both

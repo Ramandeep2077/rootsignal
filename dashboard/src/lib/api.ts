@@ -1,5 +1,11 @@
 // Typed client for the alert service's public API. All calls run in the browser (CORS allowed for the
-// dashboard origin), so the dashboard is a static shell plus live, polled data.
+// dashboard origin), so the dashboard is a static shell plus live, polled data. In demo mode the same
+// interface is served from a recorded snapshot instead (see demo.ts).
+
+import { DEMO_MODE, demoApi } from "./demo";
+import { ApiError } from "./errors";
+
+export { ApiError };
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -141,14 +147,6 @@ export interface MetricsSummary {
   incidentsByStatus: Record<string, number>;
 }
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-  }
-}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
@@ -169,7 +167,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export const api = {
+const liveApi = {
   incidents: (status?: IncidentStatus, size = 50) =>
     request<Page<IncidentSummary>>(`/api/incidents?size=${size}${status ? `&status=${status}` : ""}`),
   incident: (id: string) => request<IncidentDetail>(`/api/incidents/${encodeURIComponent(id)}`),
@@ -180,3 +178,5 @@ export const api = {
       body: JSON.stringify({ decidedBy, comment: comment || null }),
     }),
 };
+
+export const api: typeof liveApi = DEMO_MODE ? demoApi : liveApi;

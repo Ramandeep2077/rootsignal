@@ -16,7 +16,7 @@ REGISTRY="$ACCOUNT.dkr.ecr.$REGION.amazonaws.com"
 aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY"
 
 ROOT="$(git rev-parse --show-toplevel)"
-build() { docker build --platform linux/amd64 -t "$REGISTRY/oncall-copilot/$1:$TAG" "${@:2}" && docker push "$REGISTRY/oncall-copilot/$1:$TAG"; }
+build() { docker build --platform linux/amd64 -t "$REGISTRY/rootsignal/$1:$TAG" "${@:2}" && docker push "$REGISTRY/rootsignal/$1:$TAG"; }
 build alert-service "$ROOT/alert-service"
 build agent-service -f "$ROOT/agent-service/Dockerfile" "$ROOT"
 build mcp-servers -f "$ROOT/mcp-servers/Dockerfile" "$ROOT"

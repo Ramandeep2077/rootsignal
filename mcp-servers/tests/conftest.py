@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from oncall_common.db import connect
+from rootsignal_common.db import connect
 
 
 @pytest.fixture

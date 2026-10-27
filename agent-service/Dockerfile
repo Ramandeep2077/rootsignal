@@ -11,13 +11,13 @@ COPY simulator/pyproject.toml simulator/
 COPY mcp-servers/pyproject.toml mcp-servers/
 COPY evals/pyproject.toml evals/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-workspace --package oncall-agent
+    uv sync --frozen --no-install-workspace --package rootsignal-agent
 
 COPY common/ common/
 COPY agent-service/ agent-service/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --package oncall-agent
+    uv sync --frozen --package rootsignal-agent
 
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000
-CMD ["oncall-agent"]
+CMD ["rootsignal-agent"]

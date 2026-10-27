@@ -2,9 +2,9 @@
 
 import pytest
 
-from oncall_agent.guardrails import GuardrailPolicy, check
-from oncall_agent.schemas import ProposedAction
-from oncall_common.taxonomy import ActionType
+from rootsignal_agent.guardrails import GuardrailPolicy, check
+from rootsignal_agent.schemas import ProposedAction
+from rootsignal_common.taxonomy import ActionType
 
 POLICY = GuardrailPolicy(min_confidence=0.5, dry_run=True)
 RUNBOOK = ["increase_connection_pool", "scale_out"]

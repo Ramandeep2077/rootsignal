@@ -38,7 +38,7 @@ Metrics available: `requests_per_sec`, `latency_p99_ms`, `error_rate`, `cpu_perc
   `knowledge.runbook_chunks` (pgvector). Indexing runs on server start and is skipped when the corpus hash
   and model haven't changed.
 - **Actions come from runbooks, and runbooks can only name allowlisted actions.** A test fails if a runbook
-  names an action outside `oncall_common.taxonomy.ActionType`.
+  names an action outside `rootsignal_common.taxonomy.ActionType`.
 
 ## Using the tools from a desktop MCP client
 
@@ -47,9 +47,9 @@ Over stdio (e.g. Claude Desktop / Claude Code `mcpServers` config), with Postgre
 ```json
 {
   "mcpServers": {
-    "oncall-logs": {
+    "rootsignal-logs": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/oncall-copilot", "oncall-mcp", "--stdio", "logs"]
+      "args": ["run", "--directory", "/path/to/rootsignal", "rootsignal-mcp", "--stdio", "logs"]
     }
   }
 }

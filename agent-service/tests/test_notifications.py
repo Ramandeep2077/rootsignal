@@ -2,7 +2,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from oncall_agent.notifications import (
+from rootsignal_agent.notifications import (
     EmailNotifier,
     FallbackNotifier,
     IncidentNotice,
@@ -13,8 +13,8 @@ from oncall_agent.notifications import (
     email_message,
     slack_payload,
 )
-from oncall_agent.notifications.mock_slack import app as mock_slack
-from oncall_agent.settings import AgentSettings
+from rootsignal_agent.notifications.mock_slack import app as mock_slack
+from rootsignal_agent.settings import AgentSettings
 
 STATE = {
     "incident_id": "inc-42",

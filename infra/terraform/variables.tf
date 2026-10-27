@@ -16,7 +16,7 @@ variable "localstack_endpoint" {
 
 variable "project" {
   type    = string
-  default = "oncall-copilot"
+  default = "rootsignal"
 }
 
 variable "environment" {

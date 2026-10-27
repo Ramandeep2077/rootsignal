@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { api, type IncidentSummary, type MetricsSummary } from "@/lib/api";
+import { DEMO_MODE } from "@/lib/demo";
 import { formatCompact, formatDuration, formatPercent, formatUsd, humanize } from "@/lib/format";
 import { usePoll } from "@/lib/use-poll";
 import { ErrorBanner } from "./error-banner";
@@ -19,8 +20,11 @@ export function MetricsView() {
       <div>
         <h1 className="text-xl font-semibold">Metrics</h1>
         <p className="text-sm text-ink-2">
-          Live operational metrics from the alert service. Evaluation results (accuracy, guardrails, model
-          comparison) are in <code className="font-mono text-xs">evals/EVALS.md</code>.
+          {DEMO_MODE
+            ? "Operational metrics for the incidents in this snapshot, computed as the alert service does."
+            : "Live operational metrics from the alert service."}{" "}
+          Evaluation results (accuracy, guardrails, model comparison) are in{" "}
+          <code className="font-mono text-xs">evals/EVALS.md</code>.
         </p>
       </div>
       {metrics.error && <ErrorBanner error={metrics.error} />}

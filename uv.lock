@@ -4,12 +4,12 @@ requires-python = "==3.12.*"
 
 [manifest]
 members = [
-    "oncall-agent",
-    "oncall-common",
-    "oncall-copilot",
-    "oncall-evals",
-    "oncall-mcp",
-    "oncall-simulator",
+    "rootsignal",
+    "rootsignal-agent",
+    "rootsignal-common",
+    "rootsignal-evals",
+    "rootsignal-mcp",
+    "rootsignal-simulator",
 ]
 
 [[package]]
@@ -743,143 +743,6 @@ wheels = [
 ]
 
 [[package]]
-name = "oncall-agent"
-version = "0.1.0"
-source = { editable = "agent-service" }
-dependencies = [
-    { name = "aiokafka" },
-    { name = "fastapi" },
-    { name = "httpx" },
-    { name = "langgraph" },
-    { name = "mcp" },
-    { name = "oncall-common", extra = ["local-embeddings"] },
-    { name = "pyyaml" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiokafka", specifier = ">=0.11" },
-    { name = "fastapi", specifier = ">=0.115" },
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "langgraph", specifier = ">=0.3" },
-    { name = "mcp", specifier = ">=2.3,<3" },
-    { name = "oncall-common", extras = ["local-embeddings"], editable = "common" },
-    { name = "pyyaml", specifier = ">=6" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
-]
-
-[[package]]
-name = "oncall-common"
-version = "0.1.0"
-source = { editable = "common" }
-dependencies = [
-    { name = "numpy" },
-    { name = "opentelemetry-exporter-otlp-proto-http" },
-    { name = "opentelemetry-instrumentation-httpx" },
-    { name = "opentelemetry-sdk" },
-    { name = "pgvector" },
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-]
-
-[package.optional-dependencies]
-local-embeddings = [
-    { name = "fastembed" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastembed", marker = "extra == 'local-embeddings'", specifier = ">=0.4" },
-    { name = "numpy", specifier = ">=2.0" },
-    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.30" },
-    { name = "opentelemetry-instrumentation-httpx", specifier = ">=0.51b0" },
-    { name = "opentelemetry-sdk", specifier = ">=1.30" },
-    { name = "pgvector", specifier = ">=0.3" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
-    { name = "pydantic", specifier = ">=2.9" },
-    { name = "pydantic-settings", specifier = ">=2.6" },
-]
-provides-extras = ["local-embeddings"]
-
-[[package]]
-name = "oncall-copilot"
-version = "0.1.0"
-source = { virtual = "." }
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=8" },
-    { name = "pytest-asyncio", specifier = ">=0.24" },
-    { name = "pytest-cov", specifier = ">=5" },
-    { name = "ruff", specifier = ">=0.8" },
-]
-
-[[package]]
-name = "oncall-evals"
-version = "0.1.0"
-source = { editable = "evals" }
-dependencies = [
-    { name = "httpx" },
-    { name = "oncall-agent" },
-    { name = "oncall-common" },
-    { name = "oncall-simulator" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "oncall-agent", editable = "agent-service" },
-    { name = "oncall-common", editable = "common" },
-    { name = "oncall-simulator", editable = "simulator" },
-]
-
-[[package]]
-name = "oncall-mcp"
-version = "0.1.0"
-source = { editable = "mcp-servers" }
-dependencies = [
-    { name = "mcp" },
-    { name = "oncall-common", extra = ["local-embeddings"] },
-    { name = "pyyaml" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "mcp", specifier = ">=2.3,<3" },
-    { name = "oncall-common", extras = ["local-embeddings"], editable = "common" },
-    { name = "pyyaml", specifier = ">=6" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
-]
-
-[[package]]
-name = "oncall-simulator"
-version = "0.1.0"
-source = { editable = "simulator" }
-dependencies = [
-    { name = "httpx" },
-    { name = "oncall-common" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "oncall-common", editable = "common" },
-]
-
-[[package]]
 name = "onnxruntime"
 version = "1.31.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1421,6 +1284,143 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
+]
+
+[[package]]
+name = "rootsignal"
+version = "0.1.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+    { name = "pytest-cov", specifier = ">=5" },
+    { name = "ruff", specifier = ">=0.8" },
+]
+
+[[package]]
+name = "rootsignal-agent"
+version = "0.1.0"
+source = { editable = "agent-service" }
+dependencies = [
+    { name = "aiokafka" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "langgraph" },
+    { name = "mcp" },
+    { name = "pyyaml" },
+    { name = "rootsignal-common", extra = ["local-embeddings"] },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiokafka", specifier = ">=0.11" },
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "langgraph", specifier = ">=0.3" },
+    { name = "mcp", specifier = ">=2.3,<3" },
+    { name = "pyyaml", specifier = ">=6" },
+    { name = "rootsignal-common", extras = ["local-embeddings"], editable = "common" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
+]
+
+[[package]]
+name = "rootsignal-common"
+version = "0.1.0"
+source = { editable = "common" }
+dependencies = [
+    { name = "numpy" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-instrumentation-httpx" },
+    { name = "opentelemetry-sdk" },
+    { name = "pgvector" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+]
+
+[package.optional-dependencies]
+local-embeddings = [
+    { name = "fastembed" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastembed", marker = "extra == 'local-embeddings'", specifier = ">=0.4" },
+    { name = "numpy", specifier = ">=2.0" },
+    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.30" },
+    { name = "opentelemetry-instrumentation-httpx", specifier = ">=0.51b0" },
+    { name = "opentelemetry-sdk", specifier = ">=1.30" },
+    { name = "pgvector", specifier = ">=0.3" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
+    { name = "pydantic", specifier = ">=2.9" },
+    { name = "pydantic-settings", specifier = ">=2.6" },
+]
+provides-extras = ["local-embeddings"]
+
+[[package]]
+name = "rootsignal-evals"
+version = "0.1.0"
+source = { editable = "evals" }
+dependencies = [
+    { name = "httpx" },
+    { name = "rootsignal-agent" },
+    { name = "rootsignal-common" },
+    { name = "rootsignal-simulator" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "rootsignal-agent", editable = "agent-service" },
+    { name = "rootsignal-common", editable = "common" },
+    { name = "rootsignal-simulator", editable = "simulator" },
+]
+
+[[package]]
+name = "rootsignal-mcp"
+version = "0.1.0"
+source = { editable = "mcp-servers" }
+dependencies = [
+    { name = "mcp" },
+    { name = "pyyaml" },
+    { name = "rootsignal-common", extra = ["local-embeddings"] },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mcp", specifier = ">=2.3,<3" },
+    { name = "pyyaml", specifier = ">=6" },
+    { name = "rootsignal-common", extras = ["local-embeddings"], editable = "common" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
+]
+
+[[package]]
+name = "rootsignal-simulator"
+version = "0.1.0"
+source = { editable = "simulator" }
+dependencies = [
+    { name = "httpx" },
+    { name = "rootsignal-common" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "rootsignal-common", editable = "common" },
 ]
 
 [[package]]

@@ -13,13 +13,13 @@ import json
 import sys
 from collections import Counter
 
-from oncall_sim.engine import simulate
-from oncall_sim.runner import run_scenario, wait_for_analysis
-from oncall_sim.scenarios import SCENARIOS, get_scenario
+from rootsignal_sim.engine import simulate
+from rootsignal_sim.runner import run_scenario, wait_for_analysis
+from rootsignal_sim.scenarios import SCENARIOS, get_scenario
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Generate labelled incident scenarios for oncall-copilot")
+    parser = argparse.ArgumentParser(description="Generate labelled incident scenarios for rootsignal")
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--scenario", help="scenario name (see --list)")
     target.add_argument("--all", action="store_true", help="run every scenario sequentially")

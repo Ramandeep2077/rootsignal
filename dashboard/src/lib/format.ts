@@ -2,8 +2,10 @@ export function formatDuration(seconds: number | null | undefined): string {
   if (seconds === null || seconds === undefined || Number.isNaN(seconds)) return "—";
   if (seconds < 1) return `${Math.round(seconds * 1000)} ms`;
   if (seconds < 90) return `${seconds.toFixed(seconds < 10 ? 1 : 0)} s`;
-  const minutes = Math.floor(seconds / 60);
-  const rest = Math.round(seconds % 60);
+  // Round once, before splitting, so 179.6 s reads "3m" rather than "2m 60s".
+  const total = Math.round(seconds);
+  const minutes = Math.floor(total / 60);
+  const rest = total % 60;
   return rest ? `${minutes}m ${rest}s` : `${minutes}m`;
 }
 

@@ -25,8 +25,8 @@ locals {
   db_env = {
     POSTGRES_HOST = var.db_host
     POSTGRES_PORT = "5432"
-    POSTGRES_DB   = "oncall"
-    POSTGRES_USER = "oncall"
+    POSTGRES_DB   = "rootsignal"
+    POSTGRES_USER = "rootsignal"
   }
   mcp_urls = { for i, s in ["LOGS", "METRICS", "DEPLOYS", "RUNBOOKS"] : "${s}_MCP_URL" => "http://${local.dns["mcp-servers"]}:${8101 + i}/mcp" }
 
@@ -49,14 +49,14 @@ locals {
       port    = 8080
       command = null
       environment = {
-        SPRING_DATASOURCE_URL          = "jdbc:postgresql://${var.db_host}:5432/oncall"
-        SPRING_DATASOURCE_USERNAME     = "oncall"
-        SPRING_KAFKA_BOOTSTRAP_SERVERS = "${local.dns["redpanda"]}:9092"
-        ONCALL_CORS_ALLOWED_ORIGINS    = "http://${aws_lb.this.dns_name}"
+        SPRING_DATASOURCE_URL           = "jdbc:postgresql://${var.db_host}:5432/rootsignal"
+        SPRING_DATASOURCE_USERNAME      = "rootsignal"
+        SPRING_KAFKA_BOOTSTRAP_SERVERS  = "${local.dns["redpanda"]}:9092"
+        ROOTSIGNAL_CORS_ALLOWED_ORIGINS = "http://${aws_lb.this.dns_name}"
       }
       secrets = {
-        SPRING_DATASOURCE_PASSWORD = var.db_password_secret_arn
-        ONCALL_INTERNAL_API_TOKEN  = var.internal_token_secret_arn
+        SPRING_DATASOURCE_PASSWORD    = var.db_password_secret_arn
+        ROOTSIGNAL_INTERNAL_API_TOKEN = var.internal_token_secret_arn
       }
       public = { health = "/actuator/health", paths = ["/api/*", "/swagger-ui*", "/v3/api-docs*"], priority = 10 }
     }
@@ -97,7 +97,7 @@ locals {
       cpu         = 256
       memory      = 512
       port        = 8090
-      command     = ["python", "-m", "oncall_agent.notifications.mock_slack"]
+      command     = ["python", "-m", "rootsignal_agent.notifications.mock_slack"]
       environment = {}
       secrets     = {}
       public      = null

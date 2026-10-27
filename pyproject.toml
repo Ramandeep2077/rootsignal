@@ -1,9 +1,9 @@
 # uv workspace: all Python components share one lockfile and one virtualenv,
 # but each is its own installable package with its own dependencies.
 [project]
-name = "oncall-copilot"
+name = "rootsignal"
 version = "0.1.0"
-description = "Workspace root for the Python services of oncall-copilot"
+description = "Workspace root for the Python services of rootsignal"
 requires-python = ">=3.12,<3.13"
 dependencies = []
 
@@ -14,11 +14,11 @@ package = false
 members = ["common", "simulator", "mcp-servers", "agent-service", "evals"]
 
 [tool.uv.sources]
-oncall-common = { workspace = true }
-oncall-simulator = { workspace = true }
-oncall-mcp = { workspace = true }
-oncall-agent = { workspace = true }
-oncall-evals = { workspace = true }
+rootsignal-common = { workspace = true }
+rootsignal-simulator = { workspace = true }
+rootsignal-mcp = { workspace = true }
+rootsignal-agent = { workspace = true }
+rootsignal-evals = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -38,7 +38,7 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 ignore = ["E501", "RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["oncall_common", "oncall_sim", "oncall_mcp", "oncall_agent", "oncall_evals"]
+known-first-party = ["rootsignal_common", "rootsignal_sim", "rootsignal_mcp", "rootsignal_agent", "rootsignal_evals"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

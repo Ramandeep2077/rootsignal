@@ -86,8 +86,8 @@ resource "aws_db_instance" "this" {
   allocated_storage       = 20
   storage_type            = "gp3"
   storage_encrypted       = true
-  db_name                 = "oncall"
-  username                = "oncall"
+  db_name                 = "rootsignal"
+  username                = "rootsignal"
   password                = random_password.db.result
   db_subnet_group_name    = aws_db_subnet_group.this[0].name
   vpc_security_group_ids  = [var.security_group_id]

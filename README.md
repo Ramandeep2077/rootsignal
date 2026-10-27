@@ -1,10 +1,13 @@
-# oncall-copilot
+# RootSignal
 
 **An AI incident-response copilot for SRE teams.** When production breaks, monitoring fires dozens of noisy,
-duplicated alerts across many services. oncall-copilot groups them into **one incident**, sends AI agents to
+duplicated alerts across many services. RootSignal groups them into **one incident**, sends AI agents to
 investigate logs, metrics and recent deploys through **MCP tools**, proposes a **runbook-backed fix that a human
 must approve**, and sends **one** clear summary instead of an alert storm. An evaluation suite measures accuracy,
 speed, cost and guardrail safety on labelled incident scenarios.
+
+**[Live demo](https://rootsignal-seven.vercel.app)**: a read-only snapshot of real evaluation runs, including the
+misdiagnoses, each shown next to its ground truth. No install needed.
 
 Everything runs locally for **$0**: open-weight models through Ollama, local embeddings, Redpanda instead of a hosted
 Kafka, and LocalStack to validate the AWS deployment.
@@ -12,10 +15,13 @@ Kafka, and LocalStack to validate the AWS deployment.
 <!-- RESULTS:START -->
 | Metric (routed profile, 12 scenarios x 3 seeds) | Result |
 |---|---|
-| Root-cause accuracy (exact category) | TBD |
-| Alert noise reduction | TBD |
-| Time to summary (p50) | TBD |
-| Unsafe actions blocked | TBD |
+| Root-cause accuracy (exact category) | 66.7% (originating service: 83.3%) |
+| Alert noise reduction | 95.0% (1,444 alerts -> 72 incidents; grouping recall/precision 100%) |
+| Time to summary (p50) | 191 s on a laptop CPU/iGPU, $0.00 per incident |
+| Unsafe actions blocked | 100% (46/46 adversarial, 5/5 tampered, 0 unsafe reached a human under live prompt injection) |
+
+A keyword rules baseline scores higher (100%) on these synthetic scenarios because it was written against the
+simulator's log vocabulary; see the caveats in the report for what that does and doesn't mean.
 
 Full results, model comparison and methodology: **[evals/EVALS.md](evals/EVALS.md)**.
 <!-- RESULTS:END -->
@@ -91,12 +97,19 @@ See [docs/observability.md](docs/observability.md).
 Prerequisites: Docker Desktop, [Ollama](https://ollama.com), [uv](https://docs.astral.sh/uv/), Java 21, Node 22,
 GNU make. Tested on Windows 11 (16 GB RAM, no discrete GPU); works on Linux and macOS.
 
+One command (pulls the models on first run, ~6 GB, then builds the stack and fires an incident):
+
 ```bash
-make models                                 # one-off: pull qwen2.5:1.5b and qwen2.5:7b (~6 GB)
-make up                                     # build + start the stack (alerts, agents, MCP, dashboard, mocks)
-make sim SCENARIO=db_pool_exhaustion        # fire a labelled incident
-# open http://localhost:3000                -> watch it group, investigate and wait for your approval
+make demo SCENARIO=bad_deployment
+# open http://localhost:3000 -> watch it group, investigate and wait for your approval
 ```
+
+No Ollama or 16 GB machine? `make demo-lite SCENARIO=bad_deployment` runs the same pipeline (grouping, MCP tools,
+guardrails, approval, Slack message, dashboard) with the rules-based investigator instead of the LLMs: no model
+download, ~20 s per incident, only Docker, `uv` and `make` needed.
+
+Or step by step: `make models`, `make up`, `make sim SCENARIO=<name>` (the 12 scenarios are listed in
+[docs/scenarios.md](docs/scenarios.md)). A narrated walkthrough is in [docs/demo.md](docs/demo.md).
 
 | URL | What |
 |---|---|
@@ -124,7 +137,7 @@ Other targets: `make test` (all suites), `make lint`, `make eval` (evaluation su
 
 ## Design decisions and trade-offs
 
-The full log (78 decisions with reasons) is in [docs/decisions.md](docs/decisions.md). The main ones:
+The full log (84 decisions with reasons) is in [docs/decisions.md](docs/decisions.md). The main ones:
 
 - **Why multi-agent?** Triage, investigation and remediation need different context, tools and model sizes.
   Separate agents keep each prompt small (critical on CPU inference, where each prompt token costs ~15 ms), make

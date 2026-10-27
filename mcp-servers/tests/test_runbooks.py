@@ -1,16 +1,16 @@
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
-from oncall_common.embeddings import HashEmbedder
-from oncall_common.taxonomy import ActionType, RootCauseCategory
-from oncall_mcp.tools.runbooks import (
+from rootsignal_common.embeddings import HashEmbedder
+from rootsignal_common.taxonomy import ActionType, RootCauseCategory
+from rootsignal_mcp.tools.runbooks import (
     get_runbook,
     ingest_runbooks,
     load_runbooks,
     parse_runbook,
     search_runbooks,
 )
-from oncall_sim.scenarios import SCENARIOS
+from rootsignal_sim.scenarios import SCENARIOS
 
 
 def test_at_least_ten_runbooks_with_valid_metadata():

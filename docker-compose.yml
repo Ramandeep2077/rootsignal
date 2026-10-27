@@ -1,4 +1,4 @@
-# Local development stack for oncall-copilot.
+# Local development stack for rootsignal.
 #
 # Profiles keep the default footprint small on a 16 GB laptop:
 #   (default)       postgres + redpanda               -> `make infra`
@@ -10,13 +10,13 @@
 # Ollama runs natively on the host (faster on CPU than inside the Docker VM);
 # containers reach it via host.docker.internal.
 
-name: oncall-copilot
+name: rootsignal
 
 # Tracing export is off by default; `make up-obs` turns it on and starts Jaeger + Phoenix.
 x-otel-env: &otel-env
   OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
   OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-none}
-  ONCALL_TRACING_EXPORT: ${ONCALL_TRACING_EXPORT:-false}
+  ROOTSIGNAL_TRACING_EXPORT: ${ROOTSIGNAL_TRACING_EXPORT:-false}
   OTEL_METRICS_EXPORTER: none
   OTEL_LOGS_EXPORTER: none
 
@@ -24,9 +24,9 @@ services:
   postgres:
     image: pgvector/pgvector:0.8.7-pg17-trixie
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-oncall}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oncall-local-dev}
-      POSTGRES_DB: ${POSTGRES_DB:-oncall}
+      POSTGRES_USER: ${POSTGRES_USER:-rootsignal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rootsignal-local-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-rootsignal}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -92,14 +92,14 @@ services:
     environment:
       <<: *otel-env
       OTEL_SERVICE_NAME: alert-service
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-oncall}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-oncall}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-oncall-local-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-rootsignal}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-rootsignal}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-rootsignal-local-dev}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
-      ONCALL_ALERTS_TOPIC: ${ALERTS_TOPIC:-alerts.raw}
-      ONCALL_DECISIONS_TOPIC: ${DECISIONS_TOPIC:-incidents.decisions}
-      ONCALL_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-change-me-local-only}
-      ONCALL_CORS_ALLOWED_ORIGINS: ${DASHBOARD_URL:-http://localhost:3000}
+      ROOTSIGNAL_ALERTS_TOPIC: ${ALERTS_TOPIC:-alerts.raw}
+      ROOTSIGNAL_DECISIONS_TOPIC: ${DECISIONS_TOPIC:-incidents.decisions}
+      ROOTSIGNAL_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-change-me-local-only}
+      ROOTSIGNAL_CORS_ALLOWED_ORIGINS: ${DASHBOARD_URL:-http://localhost:3000}
     ports:
       - "${ALERT_SERVICE_PORT:-8080}:8080"
     depends_on:
@@ -122,7 +122,7 @@ services:
     environment:
       <<: *otel-env
       OTEL_SERVICE_NAME: mcp-servers
-      DATABASE_URL: postgresql://${POSTGRES_USER:-oncall}:${POSTGRES_PASSWORD:-oncall-local-dev}@postgres:5432/${POSTGRES_DB:-oncall}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rootsignal}:${POSTGRES_PASSWORD:-rootsignal-local-dev}@postgres:5432/${POSTGRES_DB:-rootsignal}
       EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-local}
       EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
     ports:
@@ -149,7 +149,7 @@ services:
     environment:
       <<: *otel-env
       OTEL_SERVICE_NAME: agent-service
-      DATABASE_URL: postgresql://${POSTGRES_USER:-oncall}:${POSTGRES_PASSWORD:-oncall-local-dev}@postgres:5432/${POSTGRES_DB:-oncall}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rootsignal}:${POSTGRES_PASSWORD:-rootsignal-local-dev}@postgres:5432/${POSTGRES_DB:-rootsignal}
       KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
       ALERTS_TOPIC: ${ALERTS_TOPIC:-alerts.raw}
       ALERT_SERVICE_URL: http://alert-service:8080
@@ -217,7 +217,7 @@ services:
       context: .
       dockerfile: agent-service/Dockerfile
     profiles: ["app"]
-    command: ["python", "-m", "oncall_agent.notifications.mock_slack"]
+    command: ["python", "-m", "rootsignal_agent.notifications.mock_slack"]
     ports:
       - "8090:8090"
     mem_limit: 128m

@@ -1,6 +1,6 @@
 # Incident scenarios
 
-Generated from `simulator/src/oncall_sim/scenarios.py` (seed 1). Each scenario injects one fault into a
+Generated from `simulator/src/rootsignal_sim/scenarios.py` (seed 1). Each scenario injects one fault into a
 30-minute, 30-second-tick simulation of five services (`api-gateway → auth, checkout`; `checkout → inventory,
 payments`). Alert rules (Prometheus, Datadog-style monitor, Loki log alerts, synthetics, Kubernetes events)
 fire and re-fire on the resulting metrics, so each scenario produces a noisy, duplicated, multi-service storm

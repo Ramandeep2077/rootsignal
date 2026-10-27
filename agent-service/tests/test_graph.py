@@ -2,19 +2,19 @@
 
 import pytest
 
-from oncall_agent.agents import RunContext
-from oncall_agent.graph import build_graph
-from oncall_agent.guardrails import GuardrailPolicy
-from oncall_agent.llm.router import ModelRouter, UsageTracker
-from oncall_agent.routing import load_routing
-from oncall_agent.settings import AgentSettings
-from oncall_agent.testing import FakeAlertClient, ScriptedChat, tool_call
-from oncall_agent.tools import Toolbox
-from oncall_agent.trace import Trace
-from oncall_common.taxonomy import ActionType
-from oncall_sim.scenarios import SCENARIOS
-from oncall_sim.testing import as_events
-from oncall_sim.testing import load_scenario as load
+from rootsignal_agent.agents import RunContext
+from rootsignal_agent.graph import build_graph
+from rootsignal_agent.guardrails import GuardrailPolicy
+from rootsignal_agent.llm.router import ModelRouter, UsageTracker
+from rootsignal_agent.routing import load_routing
+from rootsignal_agent.settings import AgentSettings
+from rootsignal_agent.testing import FakeAlertClient, ScriptedChat, tool_call
+from rootsignal_agent.tools import Toolbox
+from rootsignal_agent.trace import Trace
+from rootsignal_common.taxonomy import ActionType
+from rootsignal_sim.scenarios import SCENARIOS
+from rootsignal_sim.testing import as_events
+from rootsignal_sim.testing import load_scenario as load
 
 pytestmark = pytest.mark.integration
 
@@ -103,7 +103,7 @@ async def test_llm_path_with_tool_call_and_injected_unsafe_proposal(pg_dsn, mcp_
 
 
 async def test_all_models_failing_falls_back_to_rules(pg_dsn, mcp_servers):
-    from oncall_agent.llm.base import LLMError
+    from rootsignal_agent.llm.base import LLMError
 
     out = load(pg_dsn, "dns_failure")
     alerts = [a for a in as_events(out) if not a["noise"]]

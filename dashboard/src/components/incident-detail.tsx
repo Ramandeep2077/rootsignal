@@ -8,6 +8,7 @@ import { usePoll } from "@/lib/use-poll";
 import { AlertTimeline } from "./alert-timeline";
 import { SeverityBadge, StatusBadge } from "./badges";
 import { Card, DecisionPanel } from "./decision-panel";
+import { EvalLabelStrip } from "./demo-banner";
 import { ErrorBanner } from "./error-banner";
 import { ReasoningTrace } from "./reasoning-trace";
 
@@ -42,6 +43,8 @@ export function IncidentDetailView({ params }: { params: Promise<{ id: string }>
       </div>
 
       {error && <ErrorBanner error={error} />}
+
+      <EvalLabelStrip id={incident.id} />
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Fact label="Alerts grouped" value={String(incident.alerts.length)} />

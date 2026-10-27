@@ -2,9 +2,9 @@ spring:
   application:
     name: alert-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/oncall
-    username: oncall
-    password: oncall-local-dev
+    url: jdbc:postgresql://localhost:5432/rootsignal
+    username: rootsignal
+    password: rootsignal-local-dev
   jpa:
     open-in-view: false
     hibernate:
@@ -20,7 +20,7 @@ spring:
         enable.idempotence: true
         linger.ms: 5
 
-oncall:
+rootsignal:
   alerts-topic: alerts.raw
   decisions-topic: incidents.decisions
   # Shared secret for the /api/internal/** endpoints the agent service calls.
@@ -37,7 +37,7 @@ management:
       probability: 1.0
     # Spans are always created (so traceparent propagates into Kafka headers); export is opt-in.
     export:
-      enabled: ${ONCALL_TRACING_EXPORT:false}
+      enabled: ${ROOTSIGNAL_TRACING_EXPORT:false}
   opentelemetry:
     tracing:
       export:

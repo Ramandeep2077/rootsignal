@@ -2,9 +2,9 @@
 
 import pytest
 
-from oncall_sim.engine import simulate
-from oncall_sim.scenarios import get_scenario
-from oncall_sim.sink import write_telemetry
+from rootsignal_sim.engine import simulate
+from rootsignal_sim.scenarios import get_scenario
+from rootsignal_sim.sink import write_telemetry
 
 
 @pytest.mark.integration

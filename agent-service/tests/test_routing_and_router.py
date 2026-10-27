@@ -1,11 +1,11 @@
 import pytest
 
-from oncall_agent.llm.base import LLMError
-from oncall_agent.llm.router import ModelRouter, UsageTracker
-from oncall_agent.routing import HEURISTIC, load_routing
-from oncall_agent.schemas import TriageSummary
-from oncall_agent.settings import AgentSettings
-from oncall_agent.testing import ScriptedChat
+from rootsignal_agent.llm.base import LLMError
+from rootsignal_agent.llm.router import ModelRouter, UsageTracker
+from rootsignal_agent.routing import HEURISTIC, load_routing
+from rootsignal_agent.schemas import TriageSummary
+from rootsignal_agent.settings import AgentSettings
+from rootsignal_agent.testing import ScriptedChat
 
 
 def settings(**kw):

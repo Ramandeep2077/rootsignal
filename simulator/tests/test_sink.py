@@ -3,8 +3,8 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import pytest
 
-from oncall_sim.model import SimAlert
-from oncall_sim.sink import alert_payload, post_alerts
+from rootsignal_sim.model import SimAlert
+from rootsignal_sim.sink import alert_payload, post_alerts
 
 T0 = datetime(2026, 1, 1, tzinfo=UTC)
 

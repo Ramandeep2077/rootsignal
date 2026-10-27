@@ -1,10 +1,10 @@
 import pytest
 
-from oncall_agent.grouping import AlertGrouper
-from oncall_common.embeddings import HashEmbedder
-from oncall_sim.engine import simulate
-from oncall_sim.scenarios import SCENARIOS, get_scenario
-from oncall_sim.testing import as_events
+from rootsignal_agent.grouping import AlertGrouper
+from rootsignal_common.embeddings import HashEmbedder
+from rootsignal_sim.engine import simulate
+from rootsignal_sim.scenarios import SCENARIOS, get_scenario
+from rootsignal_sim.testing import as_events
 
 
 class Clock:

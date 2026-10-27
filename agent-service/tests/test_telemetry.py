@@ -7,8 +7,8 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from oncall_agent.llm.ollama import OllamaChat
-from oncall_common.telemetry import extract_context, inject_context, link_from, span
+from rootsignal_agent.llm.ollama import OllamaChat
+from rootsignal_common.telemetry import extract_context, inject_context, link_from, span
 
 EXPORTER = InMemorySpanExporter()
 

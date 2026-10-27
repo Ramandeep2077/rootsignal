@@ -1,9 +1,9 @@
 import random
 from datetime import UTC, datetime, timedelta
 
-from oncall_sim.alerting import AlertEngine, top_error
-from oncall_sim.engine import PROFILES, baseline_metrics
-from oncall_sim.model import LogLine
+from rootsignal_sim.alerting import AlertEngine, top_error
+from rootsignal_sim.engine import PROFILES, baseline_metrics
+from rootsignal_sim.model import LogLine
 
 T0 = datetime(2026, 1, 1, tzinfo=UTC)
 

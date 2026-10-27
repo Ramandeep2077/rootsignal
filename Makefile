@@ -1,4 +1,4 @@
-# oncall-copilot task runner. Works on Linux/macOS (sh) and Windows (cmd/PowerShell via GNU make).
+# rootsignal task runner. Works on Linux/macOS (sh) and Windows (cmd/PowerShell via GNU make).
 # Recipes stick to `cmd1 && cmd2`, which both shells understand.
 
 ifeq ($(OS),Windows_NT)
@@ -16,10 +16,13 @@ TRIAGE_MODEL ?= qwen2.5:1.5b
 RCA_MODEL ?= qwen2.5:7b
 
 .DEFAULT_GOAL := help
-.PHONY: help env infra up up-obs down clean logs ps models test test-java test-python test-dashboard \
-        lint sim sim-all eval eval-report tf-validate aws-local tf-plan tf-apply-local tf-destroy-local \n        aws-deploy aws-destroy
+.PHONY: help env infra up up-obs down clean logs ps models demo demo-lite test test-java test-python test-dashboard \
+        lint sim sim-all eval eval-report demo-snapshot tf-validate aws-local tf-plan tf-apply-local tf-destroy-local \
+        aws-deploy aws-destroy
 
 help: ## Show available targets
+	@echo "demo        one command: pull models, start the stack, fire a scenario (SCENARIO=...)"
+	@echo "demo-lite   same, without Ollama: rules-based agents, no model download"
 	@echo "infra       start postgres + redpanda only"
 	@echo "up          build and start the full stack (needs Ollama running on the host)"
 	@echo "up-obs      full stack + jaeger + phoenix tracing"
@@ -43,7 +46,7 @@ up: env
 	$(COMPOSE) $(APP) up -d --build --wait
 
 up-obs: export OTEL_TRACES_EXPORTER = otlp
-up-obs: export ONCALL_TRACING_EXPORT = true
+up-obs: export ROOTSIGNAL_TRACING_EXPORT = true
 up-obs: env
 	$(COMPOSE) $(APP) $(OBS) up -d --build --wait
 
@@ -61,6 +64,18 @@ ps:
 
 models:
 	ollama pull $(TRIAGE_MODEL) && ollama pull $(RCA_MODEL)
+
+# Everything from a fresh clone: models (skipped if already pulled), stack, one incident.
+demo: models up
+	uv run python simulator/run.py --scenario $(SCENARIO)
+	@echo "Open http://localhost:3000 - the incident is analysed in ~3-4 min on CPU, then waits for your approval."
+
+# Same pipeline without Ollama or model downloads: the agents use the deterministic rules investigator.
+demo-lite: export LLM_PROVIDER = mock
+demo-lite: env
+	$(COMPOSE) $(APP) up -d --build --wait
+	uv run python simulator/run.py --scenario $(SCENARIO)
+	@echo "Open http://localhost:3000 - analysed in ~20 s (rules mode, no LLM). Use 'make up' to switch back to the LLMs."
 
 test: test-python test-java test-dashboard
 
@@ -88,11 +103,15 @@ PROFILES ?= routed=3,heuristic=2,small_only=2
 # Stops the dockerised agent (the harness runs its own, per model profile), evaluates, then restarts it.
 eval:
 	$(COMPOSE) stop agent-service
-	uv run python -m oncall_evals.run --profiles $(PROFILES) --runs $(RUNS)
+	uv run python -m rootsignal_evals.run --profiles $(PROFILES) --runs $(RUNS)
 	$(COMPOSE) $(APP) start agent-service
 
 eval-report:
-	uv run python -m oncall_evals.run --report-only
+	uv run python -m rootsignal_evals.run --report-only
+
+# Refresh the hosted demo's data (dashboard/public/demo-snapshot.json) from the recorded eval incidents.
+demo-snapshot:
+	uv run python -m rootsignal_evals.demo_snapshot
 
 TF := cd infra/terraform && terraform
 

@@ -53,3 +53,8 @@ evals/runs/
 
 # Terraform var files with real settings
 infra/terraform/aws.tfvars
+
+# AI coding-assistant files (generated locally, not part of the project)
+AGENTS.md
+CLAUDE.md
+.claude/

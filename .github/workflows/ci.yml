@@ -39,12 +39,12 @@ jobs:
       postgres:
         image: pgvector/pgvector:0.8.7-pg17-trixie
         env:
-          POSTGRES_USER: oncall
-          POSTGRES_PASSWORD: oncall-local-dev
-          POSTGRES_DB: oncall
+          POSTGRES_USER: rootsignal
+          POSTGRES_PASSWORD: rootsignal-local-dev
+          POSTGRES_DB: rootsignal
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U oncall" --health-interval 5s --health-timeout 3s --health-retries 20
+          --health-cmd "pg_isready -U rootsignal" --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10
@@ -110,7 +110,7 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
           push: false
-          tags: oncall-copilot/${{ matrix.image }}:ci
+          tags: rootsignal/${{ matrix.image }}:ci
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { api, type IncidentStatus } from "@/lib/api";
+import { DEMO_MODE } from "@/lib/demo";
 import { formatDuration, formatRelative, humanize } from "@/lib/format";
 import { usePoll } from "@/lib/use-poll";
 import { SeverityBadge, StatusBadge } from "./badges";
@@ -26,7 +27,9 @@ export function IncidentList() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Incidents</h1>
-          <p className="text-sm text-ink-2">Alert storms grouped into incidents, investigated by the agents. Updates live.</p>
+          <p className="text-sm text-ink-2">
+            Alert storms grouped into incidents, investigated by the agents.{DEMO_MODE ? "" : " Updates live."}
+          </p>
         </div>
         <div role="tablist" aria-label="Filter by status" className="flex flex-wrap gap-1 text-sm">
           {FILTERS.map((f) => (

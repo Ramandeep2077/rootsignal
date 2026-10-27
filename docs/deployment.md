@@ -50,6 +50,25 @@ ECR, RDS, ECS and ELBv2 are paid LocalStack features, so `localstack.tfvars` swi
 `plan` still exercises them. CI runs `fmt -check`, `validate`, the full `plan`, and an apply/destroy of the free-tier
 subset on every pull request.
 
+## Hosted read-only demo on Vercel ($0)
+
+The dashboard has a demo mode that serves a recorded snapshot of real eval incidents
+([`dashboard/public/demo-snapshot.json`](../dashboard/public/demo-snapshot.json)) instead of calling the alert service.
+Approve/Reject work but only change the visitor's browser tab. Demo mode switches on automatically when the build
+runs on Vercel (`VERCEL=1`); set `NEXT_PUBLIC_DEMO_MODE=false` there to point a Vercel build at a real backend
+instead (with `NEXT_PUBLIC_API_URL`).
+
+1. Sign in at https://vercel.com with GitHub (Hobby plan, free).
+2. **Add New → Project**, import the repository, set **Root Directory** to `dashboard`, and deploy.
+
+Every push to `main` redeploys. To refresh the data after a new eval, with the stack running:
+
+```bash
+make demo-snapshot     # one routed run per scenario (seed 1), right or wrong, with its eval label
+```
+
+To preview the hosted build locally: `cd dashboard && NEXT_PUBLIC_DEMO_MODE=true npm run build && npx next start`.
+
 ## Deploy to real AWS
 
 ```bash
