@@ -47,7 +47,7 @@ jobs:
           --health-cmd "pg_isready -U rootsignal" --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.2
         with:
           enable-cache: true
       - run: uv sync --all-packages --frozen --python 3.12
