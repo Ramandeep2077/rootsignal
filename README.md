@@ -1,5 +1,9 @@
 # RootSignal
 
+[![CI](https://github.com/Ramandeep2077/rootsignal/actions/workflows/ci.yml/badge.svg)](https://github.com/Ramandeep2077/rootsignal/actions/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/demo-live-2ea44f)](https://rootsignal-seven.vercel.app)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 **An AI incident-response copilot for SRE teams.** When production breaks, monitoring fires dozens of noisy,
 duplicated alerts across many services. RootSignal groups them into **one incident**, sends AI agents to
 investigate logs, metrics and recent deploys through **MCP tools**, proposes a **runbook-backed fix that a human
