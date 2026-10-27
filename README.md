@@ -1,7 +1,7 @@
 # RootSignal
 
 [![CI](https://github.com/Ramandeep2077/rootsignal/actions/workflows/ci.yml/badge.svg)](https://github.com/Ramandeep2077/rootsignal/actions/workflows/ci.yml)
-[![Live demo](https://img.shields.io/badge/demo-live-2ea44f)](https://rootsignal-seven.vercel.app)
+[![Live demo](https://img.shields.io/badge/demo-live-2ea44f)](https://rootsignalapp.vercel.app)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **An AI incident-response copilot for SRE teams.** When production breaks, monitoring fires dozens of noisy,
@@ -10,7 +10,7 @@ investigate logs, metrics and recent deploys through **MCP tools**, proposes a *
 must approve**, and sends **one** clear summary instead of an alert storm. An evaluation suite measures accuracy,
 speed, cost and guardrail safety on labelled incident scenarios.
 
-**[Live demo](https://rootsignal-seven.vercel.app)**: a read-only snapshot of real evaluation runs, including the
+**[Live demo](https://rootsignalapp.vercel.app)**: a read-only snapshot of real evaluation runs, including the
 misdiagnoses, each shown next to its ground truth. No install needed.
 
 Everything runs locally for **$0**: open-weight models through Ollama, local embeddings, Redpanda instead of a hosted
